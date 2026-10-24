@@ -13,8 +13,13 @@ set -euo pipefail
 ARG_DIR="$(pwd)"
 cd "$(dirname "$0")"
 TOOLS="$(cd ../tools && pwd)"
+# git-bash/MSYS on Windows: MSYS_NO_PATHCONV=1 below stops /c/Users/... from being converted, and the venv's
+# python.exe cannot open such a path, so hand it a C:/Users/... one instead.
+if command -v cygpath >/dev/null 2>&1; then TOOLS="$(cygpath -m "$TOOLS")"; fi
 PY=$TOOLS/venv/bin/python
 [ -x "$PY" ] || PY=$TOOLS/venv/Scripts/python.exe
+# git-bash/MSYS would otherwise turn /data/local/tmp/... into C:/Program Files/Git/data/... before tv.py sees it.
+export MSYS_NO_PATHCONV=1
 tv() { "$PY" -I "$TOOLS/tv.py" "$@"; }
 PKG=io.cleanyourtv.ui
 URI=content://$PKG.config
@@ -39,6 +44,7 @@ case "${1:-}" in
 esac
 case "$FILE" in /*) ;; *) FILE="$ARG_DIR/$FILE" ;; esac
 [ -f "$FILE" ] || { echo "no such file: $FILE" >&2; exit 1; }
+if command -v cygpath >/dev/null 2>&1; then FILE="$(cygpath -m "$FILE")"; fi   # see TOOLS above
 case "$NAME" in *.json) ;; *)
   "$PY" -I "$TOOLS/b64push.py" "$FILE" "/data/local/tmp/cyt-ui-$NAME" >/dev/null
   tv "content write --uri $URI/$NAME < /data/local/tmp/cyt-ui-$NAME && rm -f /data/local/tmp/cyt-ui-$NAME && echo pushed" | tail -n 1
