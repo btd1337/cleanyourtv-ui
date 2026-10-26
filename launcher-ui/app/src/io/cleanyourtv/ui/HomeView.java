@@ -236,6 +236,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private int weatherLinePrefs = -1;
     private String weatherLineLanguage = "";
     private long clockMinute = -1;
+    private int clockPrefs = -1;    // a new clock format shows at once, not at the next minute
     private boolean okDown, backDown;
 
     private Paint labelPaint, metaPaint, clockPaint, buttonPaint, capsuleText, tipPaint, quotePaint, staleQuote;
@@ -725,8 +726,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private boolean updateClock() {
         long now = System.currentTimeMillis();
         long minute = now / 60_000;
-        if (minute == clockMinute || clockPaint == null) return false;
+        if (minute == clockMinute && Prefs.version == clockPrefs || clockPaint == null) return false;
         clockMinute = minute;
+        clockPrefs = Prefs.version;
         clockText = Ui.clock(now);
         dateText = Ui.date(now);
         return true;

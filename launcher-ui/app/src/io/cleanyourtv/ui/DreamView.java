@@ -39,7 +39,7 @@ import java.util.concurrent.Executors;
  * Dark scrims only where there is text, stronger where the photo is bright. Any key exits (as on Apple TV).
  * Without photos (no TMDB key, or before the first fetch): the big clock over the night aurora.
  */
-final class DreamView extends View implements Choreographer.FrameCallback, HomeData.Listener, Recs.Listener {
+final class DreamView extends View implements Choreographer.FrameCallback, HomeData.Listener, Recs.Listener, Screensaver.Show {
     private static final long SHOW_MS = 30_000, FADE_MS = 3_000, FIRST_MS = 1_600;
     private static final float ZOOM = 0.1f;
     /** Photos 10% larger than the screen (the zoom goes up to 1.1 without upscaling). */
@@ -111,6 +111,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     private RuntimeShader glassShader;
     private boolean running, dirty = true, chromeDirty = true;
     private boolean fallback;       // the aurora with the clock (no photos)
+    private final boolean auroraOnly;   // the "Clock and aurora" style: the aurora even when there are photos
     private boolean decoding;
     private int generation, slides;
     private Slide current, incoming, prepared;
@@ -130,7 +131,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
             if (!running) return;
             data.refreshIfStale();
             recs.refreshIfStale();
-            recs.prefetchAll();
+            if (!auroraOnly) recs.prefetchAll();
             dirty = true;
             chromeDirty = true;
             prepareNext();
@@ -139,7 +140,12 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
     };
 
     DreamView(Context c) {
+        this(c, false);
+    }
+
+    DreamView(Context c, boolean auroraOnly) {
         super(c);
+        this.auroraOnly = auroraOnly;
         data = HomeData.get(c);
         recs = Recs.get(c);
         Shaders.dream(scene.palette);
@@ -157,26 +163,26 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
         shadowPaint.setColor(0xFF000000);
     }
 
-    void start() {
+    @Override public void start() {
         if (running) return;
         running = true;
         if (worker.isShutdown()) worker = Executors.newSingleThreadExecutor();
         startedAt = clock();
         lastFrame = 0;
         failed.clear();
-        fallback = recs.showcase().isEmpty();
+        fallback = auroraOnly || recs.showcase().isEmpty();
         data.addListener(this);
         recs.addListener(this);
         data.refreshIfStale();
         recs.refreshIfStale();
-        recs.prefetchAll();
+        if (!auroraOnly) recs.prefetchAll();
         prepareNext();
         handler.postDelayed(tick, 60_000);
         Choreographer.getInstance().postFrameCallback(this);
         invalidate();
     }
 
-    void stop() {
+    @Override public void stop() {
         if (!running) return;
         running = false;
         generation++;
@@ -256,7 +262,7 @@ final class DreamView extends View implements Choreographer.FrameCallback, HomeD
 
     /** Loads the next photo in the background (one at a time); once ready, it comes in at the right moment. */
     private void prepareNext() {
-        if (!running || decoding || prepared != null) return;
+        if (!running || decoding || prepared != null || auroraOnly) return;
         List<Recs.Pick> list = recs.showcase();
         if (list.isEmpty()) return;
         Slide last = incoming != null ? incoming : current;

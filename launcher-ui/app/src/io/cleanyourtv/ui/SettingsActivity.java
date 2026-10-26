@@ -45,7 +45,7 @@ import java.util.Set;
  */
 public class SettingsActivity extends Activity {
     private SettingsView view;
-    private DreamView preview;   // "Screensaver": the screensaver right here, without changing the system setting
+    private View preview;   // "Screensaver": the screensaver right here, in the style picked, without changing the system setting
 
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -99,14 +99,14 @@ public class SettingsActivity extends Activity {
     }
 
     void showPreview() {
-        preview = new DreamView(this);
+        preview = Screensaver.make(this);
         setContentView(preview);
-        preview.start();
+        ((Screensaver.Show) preview).start();
     }
 
     private void closePreview() {
         if (preview == null) return;
-        preview.stop();
+        ((Screensaver.Show) preview).stop();
         preview = null;
         setContentView(view);
         view.resume();
@@ -191,7 +191,8 @@ public class SettingsActivity extends Activity {
         private String rowText(int row) {
             switch (screen) {
                 case MAIN: {
-                    String[] names = {Ui.tr("Tela de Descanso, ver agora", "Screensaver, preview"), Ui.tr("Ajustes do Início", "Home Settings"),
+                    String[] names = {Ui.tr("Tela de Descanso, ver agora", "Screensaver, preview") + ", " + styleName(Prefs.screensaverStyle()),
+                            Ui.tr("Ajustes do Início", "Home Settings"),
                             Ui.tr("Prateleira", "Shelf"), Ui.tr("Botões do Controle", "Remote Buttons"), Ui.tr("Serviços", "Services"),
                             Ui.tr("Conta TMDB, ", "TMDB account, ") + account(), Ui.tr("Ajustes da TV", "TV Settings")};
                     return row < names.length ? names[row] : "";
@@ -345,7 +346,9 @@ public class SettingsActivity extends Activity {
                 float right = rowRect.right - 30 * k;
                 if (i == 0 || i == 5) {
                     rowValue.setColor(blend(0x8CFFFFFF, 0x8C1C1C1E, f));
-                    c.drawText(i == 0 ? Ui.tr("Ver agora", "Preview") : account(), right, base, rowValue);
+                    // The screensaver's style: ← → change it (shown while focused), OK shows it.
+                    String style = styleName(Prefs.screensaverStyle());
+                    c.drawText(i == 5 ? account() : f > 0.5f ? "‹  " + style + "  ›" : style, right, base, rowValue);
                 } else {
                     float cw = Symbols.width(getContext(), "chevron_right", 22 * k);
                     Symbols.draw(getContext(), c, "chevron_right", right - cw / 2, rowRect.centerY(), 22 * k, blend(0x66FFFFFF, 0x991C1C1E, f));
@@ -431,7 +434,13 @@ public class SettingsActivity extends Activity {
                     return true;
                 case KeyEvent.KEYCODE_DPAD_LEFT:
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
-                    if (down && screen == SHELF_EDIT) {
+                    if (down && screen == MAIN && focus == 0) {
+                        int at = java.util.Arrays.asList(STYLES).indexOf(Prefs.screensaverStyle());
+                        int dir = e.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : -1;
+                        Prefs.setScreensaverStyle(STYLES[(at + dir + STYLES.length) % STYLES.length]);
+                        invalidate();
+                        spoken.focusMoved();
+                    } else if (down && screen == SHELF_EDIT) {
                         moveShelfApp(e.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : -1);
                         invalidate();
                     } else if (down && screen == HOME_SETTINGS) {
@@ -483,8 +492,13 @@ public class SettingsActivity extends Activity {
         // MARK: - Home Settings and Remote Buttons
 
         private static final String[] LANGUAGES = {"auto", "pt", "en", "es", "de", "ru", "fr", "tr"}, UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
-        /** Home Settings: language, temperature, theme, weather, quotes, then one row per coin. */
-        private static final int CITY_ROW = 4, COIN_ROWS = 6;
+        private static final String[] CLOCKS = {"auto", "24h", "12h"}, STYLES = {"photos", "aurora"};
+        /** Home Settings: language, temperature, theme, clock, weather, city, quotes, then one row per coin. */
+        private static final int CLOCK_ROW = 3, WEATHER_ROW = 4, CITY_ROW = 5, QUOTES_ROW = 6, COIN_ROWS = 7;
+
+        private static String styleName(String style) {
+            return style.equals("aurora") ? Ui.tr("Relógio e aurora", "Clock and aurora") : Ui.tr("Destaques", "Picks");
+        }
 
         private boolean dollar() {
             return "BRL".equalsIgnoreCase(Config.CURRENCY.trim());
@@ -495,6 +509,7 @@ public class SettingsActivity extends Activity {
             l.add(Ui.tr("Idioma", "Language"));
             l.add(Ui.tr("Temperatura", "Temperature"));
             l.add(Ui.tr("Tema", "Theme"));
+            l.add(Ui.tr("Formato do relógio", "Clock format"));
             l.add(Ui.tr("Widget do clima", "Weather widget"));
             l.add(Ui.tr("Cidade", "City"));
             l.add(Ui.tr("Widget de cotações", "Quotes widget"));
@@ -516,9 +531,12 @@ public class SettingsActivity extends Activity {
             v[1] = unit.equals("C") ? "°C" : unit.equals("F") ? "°F" : Ui.tr("Automática", "Automatic");
             String theme = Prefs.theme();
             v[2] = theme.equals("light") ? Ui.tr("Claro", "Light") : theme.equals("dark") ? Ui.tr("Escuro", "Dark") : Ui.tr("Automático", "Automatic");
-            v[3] = onOff(Prefs.weather());
+            String clock = Prefs.clockFormat();
+            v[CLOCK_ROW] = clock.equals("24h") ? Ui.tr("24 horas", "24-hour") : clock.equals("12h") ? Ui.tr("12 horas", "12-hour")
+                    : Ui.tr("Automático", "Automatic");
+            v[WEATHER_ROW] = onOff(Prefs.weather());
             v[CITY_ROW] = !cityStatus.isEmpty() ? cityStatus : Prefs.city().isEmpty() ? "—" : Prefs.city();
-            v[5] = onOff(Prefs.quotes());
+            v[QUOTES_ROW] = onOff(Prefs.quotes());
             // No quotes widget, nowhere to show prices: the coins read as off (and stay locked) until it is back on.
             for (int i = COIN_ROWS; i < v.length; i++) v[i] = onOff(Prefs.quotes() && Prefs.coin(i - COIN_ROWS));
             return v;
@@ -594,9 +612,14 @@ public class SettingsActivity extends Activity {
                     Prefs.setTheme(THEMES[(at + dir + THEMES.length) % THEMES.length]);
                     break;
                 }
-                case 3: Prefs.setWeather(!Prefs.weather()); break;
+                case CLOCK_ROW: {
+                    int at = java.util.Arrays.asList(CLOCKS).indexOf(Prefs.clockFormat());
+                    Prefs.setClockFormat(CLOCKS[(at + dir + CLOCKS.length) % CLOCKS.length]);
+                    break;
+                }
+                case WEATHER_ROW: Prefs.setWeather(!Prefs.weather()); break;
                 case CITY_ROW: return;
-                case 5: Prefs.setQuotes(!Prefs.quotes()); break;
+                case QUOTES_ROW: Prefs.setQuotes(!Prefs.quotes()); break;
                 default:
                     if (!Prefs.quotes()) return;
                     Prefs.setCoin(focus - COIN_ROWS, !Prefs.coin(focus - COIN_ROWS));

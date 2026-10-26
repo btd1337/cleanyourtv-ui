@@ -351,6 +351,12 @@ final class French {
             case "ADB refused the command": return "ADB a refusé la commande";
             case "invalid ADB message": return "message ADB invalide";
             case "ADB message too large": return "message ADB trop volumineux";
+            // Screensaver style and clock format
+            case "Picks": return "Suggestions";
+            case "Clock and aurora": return "Horloge et aurore";
+            case "Clock format": return "Format de l'heure";
+            case "24-hour": return "24 heures";
+            case "12-hour": return "12 heures";
             default:
                 // Notices are saved in the language in use when they were generated.
                 for (String p : new String[] {"Couldn't check Free My TV: ", "Couldn't turn on Free My TV: ",

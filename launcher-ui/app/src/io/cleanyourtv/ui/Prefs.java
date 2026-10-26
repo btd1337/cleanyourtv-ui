@@ -72,6 +72,32 @@ final class Prefs {
 
     static void setTheme(String v) { put("theme", v); }
 
+    /** The screensaver: "photos" (the picks, as before) or "aurora" (the clock over the sky, without photos). */
+    static String screensaverStyle() {
+        return "aurora".equals(sp().getString("screensaver", "photos")) ? "aurora" : "photos";
+    }
+
+    static void setScreensaverStyle(String v) { put("screensaver", v); }
+
+    /** "auto" (12-hour in English, 24-hour otherwise, as before), "24h" or "12h". */
+    static String clockFormat() {
+        String v = sp().getString("clock", "auto");
+        return v.equals("24h") || v.equals("12h") ? v : "auto";
+    }
+
+    static void setClockFormat(String v) { put("clock", v); }
+
+    /**
+     * Reads the settings again from disk. On Android 11 the screensaver runs in the main process while the settings
+     * are changed in :home, and each process keeps its own copy in memory; this one would miss the change.
+     */
+    @SuppressWarnings("deprecation")
+    static void reload() {
+        if (app == null) return;
+        app.getSharedPreferences("settings", Context.MODE_MULTI_PROCESS);
+        Ui.applyLanguage();
+    }
+
     // MARK: - City
 
     static String city() { return sp().getString("city", Config.CITY).trim(); }
