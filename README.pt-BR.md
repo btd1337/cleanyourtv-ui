@@ -59,7 +59,8 @@ Free My TV. Este projeto é para quem quer os dois e um Explorar completo.
   semana; sem internet, usa a cópia antiga) e imagens também (até 160 MB, uma semana). Quando você abre um app ou
   a TV, o launcher solta o que guardava na memória: numa TCL de 2 GB, cerca de 66 MB em segundo plano, contra
   ~155 MB antes.
-- Sem anúncios e sem telemetria: só fala com o TMDB, o Wikidata (IDs dos serviços) e o Open-Meteo (clima).
+- Sem anúncios e sem telemetria: só fala com o TMDB, o Wikidata (IDs dos serviços) e o Open-Meteo (clima), além da
+  Binance para as cotações de cripto quando `show_crypto=true` (desligado por padrão).
 
 **Controle e configuração**
 - `examples/<modelo>/remote.json` diz quais botões do controle podem ser trocados; na TV, cada um abre um app, uma
@@ -127,11 +128,31 @@ Este fork não altera os arquivos do original, com uma exceção: o `README.md` 
 copia o README novo do CleanYourTV para [`README.cleanyourtv.md`](README.cleanyourtv.md) e mantém os deste fork. Qualquer outro
 conflito vira uma issue com os comandos para resolver à mão.
 
+## Licença e uso
+
+Todo o código está sob a licença MIT: o do CleanYourTV UI ([`launcher-ui/LICENSE`](launcher-ui/LICENSE)), o do
+[CleanYourTV](https://github.com/Gathin23/cleanyourtv) ([`LICENSE`](LICENSE)) e o do
+[Free My TV](https://github.com/simbasjungles/free-my-tv) ([`launcher-ui/LICENSE.free-my-tv`](launcher-ui/LICENSE.free-my-tv)).
+Você pode usar, alterar e compartilhar, inclusive comercialmente, mantendo os avisos de copyright e os textos das
+licenças. Vem como está, sem garantia.
+
+O projeto mistura várias coisas, cada uma com seus próprios termos, que a licença MIT não cobre:
+- **Serviços online.** A chave gratuita do TMDB e a API gratuita do Open-Meteo são para uso não comercial; o uso
+  comercial é licenciado à parte por cada um. Os dados do Wikidata são CC0; a Binance tem os próprios termos.
+- **Fontes e ícones.** Inter e Outfit (SIL Open Font License 1.1), Material Symbols (Apache 2.0) e os logos das moedas
+  (CC0).
+- **Marcas.** Netflix, YouTube, Prime Video, Disney+, Apple TV, Max, TMDB e os demais nomes e logos pertencem aos seus
+  donos. Este projeto não tem vínculo com nenhum deles, e nada feito a partir dele deve parecer oficial.
+
+Tudo, item por item, está em [`launcher-ui/NOTICE`](launcher-ui/NOTICE). Se você usar este projeto, inclusive num
+serviço, um crédito com link para este repositório é bem-vindo (um pedido, não uma condição), para que outras pessoas
+o encontrem e usem nas próprias TVs.
+
 ## Créditos e contato
 
 - [CleanYourTV](https://github.com/Gathin23/cleanyourtv), de Gathin, e [Free My TV](https://github.com/simbasjungles/free-my-tv),
   dos seus autores, ambos sob a licença MIT. Detalhes em [`launcher-ui/NOTICE`](launcher-ui/NOTICE).
 - Este produto usa a API do TMDB, mas não é endossado nem certificado pelo TMDB. IDs dos serviços pelo Wikidata.
-  Clima por Open-Meteo.com.
+  Clima por Open-Meteo.com (CC BY 4.0).
 - Matheus Caldeira, [github.com/matheus-caldeira](https://github.com/matheus-caldeira). Dúvidas e problemas nas
   [issues](https://github.com/matheus-caldeira/cleanyourtv-ui/issues).
