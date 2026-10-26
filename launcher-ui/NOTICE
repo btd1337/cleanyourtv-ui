@@ -23,6 +23,9 @@ Free My TV. Both are under the MIT License.
 - Free My TV, Copyright (c) 2026 Free My TV contributors, https://github.com/simbasjungles/free-my-tv
   (the home screen, settings, screensaver and recommendations code in app/, from commit ffa23c7;
   see LICENSE.free-my-tv)
+- CleanYourTV-UI-TR, by ichZara, https://github.com/ichZara/CleanYourTV-UI-TR, a fork of this project shared under
+  its MIT License (the Turkish translation in app/src/io/cleanyourtv/ui/Turkish.java, and the ideas behind the
+  screensaver styles, clock format, Wi-Fi shortcut and the paged picks, rewritten here)
 
 The app has no libraries of its own: besides its sources it uses only the Android platform (org.json included).
 

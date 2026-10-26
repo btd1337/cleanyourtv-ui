@@ -4,7 +4,7 @@
 
 Uma tela inicial para Android TV com cara de Apple TV, em cima do **[CleanYourTV](https://github.com/Gathin23/cleanyourtv)**
 (que tira o lixo de fábrica da TV) e com o visual do **[Free My TV](https://github.com/simbasjungles/free-my-tv)**.
-Em inglês e português (e espanhol, alemão e russo). Explorar filmes e séries com o TMDB, ver onde cada um passa e abrir direto no app.
+Em inglês e português (e espanhol, alemão, russo, francês e turco). Explorar filmes e séries com o TMDB, ver onde cada um passa e abrir direto no app.
 
 ![Tela inicial](docs/ui/screenshots/home.jpg)
 
@@ -27,7 +27,7 @@ O fork só **acrescenta** arquivos, e um workflow traz as novidades do CleanYour
 | "Assistir em…" | — | Abre o app | Abre **o título** no app (Netflix, Disney+, Apple TV, Max, Prime) quando o Wikidata sabe o ID |
 | Botões do controle | `app_keys` no tema | — | Um `remote.json` por modelo + tela de ajustes na TV |
 | Configuração | `config.json` do tema | Ajustes na TV | `config.json` enviado pelo computador + ajustes na TV |
-| Idioma | Inglês | Vários idiomas | Inglês e português, mais espanhol, alemão e russo; segue o idioma da TV |
+| Idioma | Inglês | Vários idiomas | Inglês e português, mais espanhol, alemão, russo, francês e turco; segue o idioma da TV |
 | Custo para um assistente de IA adaptar | Baixo | Médio | **Maior**: mais código, rede e telas, mais tokens |
 
 Quer só uma TV limpa e uma tela mínima? Use o `launcher/` do CleanYourTV. Quer a tela inicial sem o debloat? Use o

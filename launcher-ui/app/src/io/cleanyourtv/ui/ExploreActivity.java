@@ -1381,6 +1381,7 @@ public class ExploreActivity extends Activity {
 
     private static String yearLabel(String y) {
         if (y.equals("old")) return Ui.tr("Antes de 1990", "Before 1990");
+        if (y.endsWith("s") && Ui.tur) return Turkish.decade(y.substring(0, 4));
         if (y.endsWith("s")) return Ui.tr("Anos ", "The ") + y.substring(0, 4) + (Ui.tr("", "s"));
         return y;
     }
