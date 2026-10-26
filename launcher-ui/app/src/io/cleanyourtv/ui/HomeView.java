@@ -1315,17 +1315,22 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     }
 
     /**
-     * `image` stretched over `cell`, with corners of radius `r`. Android 12+ clips to the rounded shape; on Android 9 to
-     * 11 that anti-aliased clip costs the GPU a mask on every frame of a focus animation (measured on a Mi Box 3: most of
-     * a 49 ms frame), so there the image is the shader of a rounded rectangle instead, which looks the same.
+     * `image` covering `cell` (scaled to fill it with its proportions kept, the overflow cropped evenly), with corners of
+     * radius `r`: the shelf's tiles are wider than the apps' 16:9 TV art, which a stretch would squash. Android 12+
+     * clips to the rounded shape; on Android 9 to 11 that anti-aliased clip costs the GPU a mask on every frame of a
+     * focus animation (measured on a Mi Box 3: most of a 49 ms frame), so there the image is the shader of a rounded
+     * rectangle instead, which looks the same.
      */
     private void roundImage(Canvas c, Bitmap image, RectF cell, float r) {
+        float scale = Math.max(cell.width() / image.getWidth(), cell.height() / image.getHeight());
+        imageMatrix.setScale(scale, scale);
+        imageMatrix.postTranslate(cell.centerX() - image.getWidth() * scale / 2, cell.centerY() - image.getHeight() * scale / 2);
         if (!Ui.LEGACY) {
             clip.reset();
             clip.addRoundRect(cell, r, r, Path.Direction.CW);
             c.save();
             c.clipPath(clip);
-            c.drawBitmap(image, null, cell, bitmapPaint);
+            c.drawBitmap(image, imageMatrix, bitmapPaint);
             c.restore();
             return;
         }
@@ -1334,8 +1339,6 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
             shader = new BitmapShader(image, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
             imageShaders.put(image, shader);
         }
-        imageMatrix.setScale(cell.width() / image.getWidth(), cell.height() / image.getHeight());
-        imageMatrix.postTranslate(cell.left, cell.top);
         shader.setLocalMatrix(imageMatrix);
         imageFill.setShader(shader);
         c.drawRoundRect(cell, r, r, imageFill);
