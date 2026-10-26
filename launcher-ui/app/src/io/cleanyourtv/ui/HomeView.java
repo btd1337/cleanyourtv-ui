@@ -142,6 +142,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private List<Recs.Pick> cards = new ArrayList<>();
     // The cards page through the tab's picks three at a time, round and round: → past the last card turns the page,
     // and the last page leads back to the first. Only full pages: the leftover picks of a last, short page are skipped.
+    // One dot per page after the tabs, like the banners in Explore.
     private int page, pages = 1;
     private final Spring[] topFocus = new Spring[6];
     private final RectF[] topRects = new RectF[6];
@@ -2776,7 +2777,19 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < 3; i++) if (cardFocus[i].value > 0.02f && (top < 0 || cardFocus[i].value > cardFocus[top].value)) top = i;
         for (int i = 0; i < 3; i++) if (i != top) drawLightCard(c, i);
         if (top >= 0) drawLightCard(c, top);
+        drawPageDots(c);
         if (HomeData.coinCount() > 0) drawQuotes(c);
+    }
+
+    /** A dot per page after the tabs, the current one solid (Explore's banners: 12 px, 10 px apart). */
+    private void drawPageDots(Canvas c) {
+        if (pages <= 1 || cards.isEmpty()) return;
+        float r = 6 * k, step = 22 * k, x = topRects[2].right + 28 * k + r, cy = topRects[2].centerY();
+        fill.setShader(null);
+        for (int i = 0; i < pages; i++) {
+            fill.setColor(i == page ? tone(L_INK, WHITE) : tone(0x4D1C1C1E, 0x59FFFFFF));
+            c.drawCircle(x + i * step, cy, r, fill);
+        }
     }
 
     private boolean picksOn() {
