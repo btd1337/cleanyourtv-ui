@@ -59,6 +59,7 @@ final class Tmdb {
             case "es": return "es-ES";
             case "de": return "de-DE";
             case "ru": return "ru-RU";
+            case "fr": return "fr-FR";
             default: return "en-US";
         }
     }
