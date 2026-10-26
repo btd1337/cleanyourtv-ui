@@ -5,6 +5,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 : "${TV_HOST:?set TV_HOST to the TV IP address, e.g. TV_HOST=192.168.1.50 $0}"
 TOOLS="$(cd ../tools && pwd)"
+# git-bash/MSYS on Windows: MSYS_NO_PATHCONV=1 below stops /c/Users/... from being converted, and the venv's
+# python.exe cannot open such a path, so hand it a C:/Users/... one instead.
+if command -v cygpath >/dev/null 2>&1; then TOOLS="$(cygpath -m "$TOOLS")"; fi
 PY=$TOOLS/venv/bin/python
 [ -x "$PY" ] || PY=$TOOLS/venv/Scripts/python.exe
 export MSYS_NO_PATHCONV=1

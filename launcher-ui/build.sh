@@ -25,7 +25,12 @@ AJ="$(ls -d "$SDK"/platforms/android-*/android.jar 2>/dev/null | sort -V | tail 
 # keeps building exactly as before; git-bash/MSYS on Windows has no zip(1), so fall back to Python's
 # zipfile in append mode, which leaves aapt2's existing entry order untouched.
 ZIPPY="${PYTHON:-}"
-if [ -z "$ZIPPY" ]; then ZIPPY="$(command -v python3 || command -v python || true)"; fi
+if [ -z "$ZIPPY" ]; then
+  # On Windows, python3 can be the Microsoft Store alias, which exists but only prints an install hint.
+  for c in python3 python; do
+    if command -v "$c" >/dev/null 2>&1 && "$c" -c "import zipfile" >/dev/null 2>&1; then ZIPPY="$(command -v "$c")"; break; fi
+  done
+fi
 if ! command -v zip >/dev/null 2>&1 && [ -z "$ZIPPY" ]; then
   echo "No zip(1) and no Python 3 to pack classes.dex. Install either (or set PYTHON)."; exit 1
 fi
