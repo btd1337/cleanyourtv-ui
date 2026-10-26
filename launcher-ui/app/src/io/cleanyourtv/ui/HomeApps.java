@@ -476,7 +476,7 @@ final class HomeApps {
     // MARK: - Colored logos (shelf)
 
     /** Bump when the way logos are lifted changes (the ones saved on disk are redone). */
-    private static final int LOGO_VERSION = 2;
+    private static final int LOGO_VERSION = 3;
 
     private static Bitmap shelfLogo(Context c, String key, String pkg, String mode, boolean extract) {
         synchronized (LOGOS) {
@@ -585,23 +585,26 @@ final class HomeApps {
         for (int i = 0; i < 3; i++) mean[i] = (p00[i] + p10[i] + p01[i] + p11[i] + top[w / 2][i] + bottom[w / 2][i] + left[h / 2][i] + right[h / 2][i]) / 8;
         float bgLum = lum(mean), bgSat = sat(mean);
         int[] out = new int[w * h];
-        float[] bg = new float[3], col = new float[3];
+        float[] bg = new float[3], col = new float[3], dist = new float[w * h];
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                patch(bg, top, bottom, left, right, x, y, w, h);
+                rgb(px[y * w + x], col);
+                dist[y * w + x] = (float) Math.sqrt(((col[0] - bg[0]) * (col[0] - bg[0]) + (col[1] - bg[1]) * (col[1] - bg[1])
+                        + (col[2] - bg[2]) * (col[2] - bg[2])) / 3);
+            }
+        }
+        // The anti-aliased edge between the logo and the background is a blend of the two: next to the ink it fades,
+        // it doesn't stay opaque (a red logo cut from a white banner would keep a pink rim on the dark tile).
+        int[] ink = farthest(dist, w, h, 3);
         int opaque = 0;
         for (int y = 0; y < h; y++) {
-            float v = (float) y / (h - 1);
             for (int x = 0; x < w; x++) {
-                float u = (float) x / (w - 1);
-                for (int i = 0; i < 3; i++) {
-                    bg[i] = (1 - v) * top[x][i] + v * bottom[x][i] + (1 - u) * left[y][i] + u * right[y][i]
-                            - ((1 - u) * (1 - v) * p00[i] + u * (1 - v) * p10[i] + (1 - u) * v * p01[i] + u * v * p11[i]);
-                }
-                int p = px[y * w + x];
-                col[0] = ((p >> 16) & 255) / 255f;
-                col[1] = ((p >> 8) & 255) / 255f;
-                col[2] = (p & 255) / 255f;
-                float dist = (float) Math.sqrt(((col[0] - bg[0]) * (col[0] - bg[0]) + (col[1] - bg[1]) * (col[1] - bg[1])
-                        + (col[2] - bg[2]) * (col[2] - bg[2])) / 3);
-                float a = smoothstep(0.07f, 0.22f, dist);
+                patch(bg, top, bottom, left, right, x, y, w, h);
+                rgb(px[y * w + x], col);
+                float a = smoothstep(0.07f, 0.22f, dist[y * w + x]);
+                if (a <= 0.004f) continue;
+                a = Math.min(a, coverage(col, bg, px[ink[y * w + x]]));
                 if (a <= 0.004f) continue;
                 for (int i = 0; i < 3; i++) col[i] = clamp((col[i] - (1 - a) * bg[i]) / a);   // no background halo
                 float l = lum(col), s = sat(col);
@@ -708,6 +711,57 @@ final class HomeApps {
         acc[0] += ((p >> 16) & 255) / 255f * k;
         acc[1] += ((p >> 8) & 255) / 255f * k;
         acc[2] += (p & 255) / 255f * k;
+    }
+
+    private static void rgb(int p, float[] out) {
+        out[0] = ((p >> 16) & 255) / 255f;
+        out[1] = ((p >> 8) & 255) / 255f;
+        out[2] = (p & 255) / 255f;
+    }
+
+    /** The background at (x, y): the patch spanning the four edge profiles. */
+    private static void patch(float[] out, float[][] top, float[][] bottom, float[][] left, float[][] right, int x, int y, int w, int h) {
+        float u = (float) x / (w - 1), v = (float) y / (h - 1);
+        float[] p00 = top[0], p10 = top[w - 1], p01 = bottom[0], p11 = bottom[w - 1];
+        for (int i = 0; i < 3; i++) {
+            out[i] = (1 - v) * top[x][i] + v * bottom[x][i] + (1 - u) * left[y][i] + u * right[y][i]
+                    - ((1 - u) * (1 - v) * p00[i] + u * (1 - v) * p10[i] + (1 - u) * v * p01[i] + u * v * p11[i]);
+        }
+    }
+
+    /** For each pixel, the index of the one farthest from the background (highest `dist`) within `r` px. */
+    private static int[] farthest(float[] dist, int w, int h, int r) {
+        int[] rows = new int[w * h], out = new int[w * h];
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int best = y * w + x;
+                for (int xx = Math.max(0, x - r); xx <= Math.min(w - 1, x + r); xx++) if (dist[y * w + xx] > dist[best]) best = y * w + xx;
+                rows[y * w + x] = best;
+            }
+        }
+        for (int y = 0; y < h; y++) {
+            for (int x = 0; x < w; x++) {
+                int best = rows[y * w + x];
+                for (int yy = Math.max(0, y - r); yy <= Math.min(h - 1, y + r); yy++) if (dist[rows[yy * w + x]] > dist[best]) best = rows[yy * w + x];
+                out[y * w + x] = best;
+            }
+        }
+        return out;
+    }
+
+    /**
+     * How much of `ink` the color `col` holds when it lies between the background and that ink (an anti-aliased edge);
+     * 1 when it is another color, such as a logo's second ink, which stays opaque.
+     */
+    private static float coverage(float[] col, float[] bg, int ink) {
+        float dr = ((ink >> 16) & 255) / 255f - bg[0], dg = ((ink >> 8) & 255) / 255f - bg[1], db = (ink & 255) / 255f - bg[2];
+        float len2 = dr * dr + dg * dg + db * db;
+        if (len2 < 1e-4f) return 1;
+        float cr = col[0] - bg[0], cg = col[1] - bg[1], cb = col[2] - bg[2];
+        float t = (cr * dr + cg * dg + cb * db) / len2;
+        float er = cr - t * dr, eg = cg - t * dg, eb = cb - t * db;
+        float off = (float) Math.sqrt((er * er + eg * eg + eb * eb) / 3);
+        return clamp(t) + (1 - clamp(t)) * smoothstep(0.04f, 0.1f, off);
     }
 
     /** Moving average (odd window) on each channel of the profile. */
