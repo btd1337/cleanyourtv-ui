@@ -182,7 +182,7 @@ public class DetailActivity extends Activity {
 
         JSONObject region = o.optJSONObject("watch/providers") == null ? null
                 : o.optJSONObject("watch/providers").optJSONObject("results") == null ? null
-                : o.optJSONObject("watch/providers").optJSONObject("results").optJSONObject(Tmdb.REGION);
+                : o.optJSONObject("watch/providers").optJSONObject("results").optJSONObject(Tmdb.region());
         String[] watchApp = firstApp(region);
         TvUi.Flow actions = new TvUi.Flow(this, Math.round(20 * k), Math.round(20 * k));
         actions.setPadding(Math.round(14 * k), Math.round(36 * k), Math.round(96 * k), Math.round(16 * k));
@@ -253,7 +253,7 @@ public class DetailActivity extends Activity {
                 JSONArray results = o.getJSONObject("release_dates").getJSONArray("results");
                 for (int i = 0; i < results.length(); i++) {
                     JSONObject r = results.getJSONObject(i);
-                    if (!Tmdb.REGION.equals(r.optString("iso_3166_1"))) continue;
+                    if (!Tmdb.region().equals(r.optString("iso_3166_1"))) continue;
                     JSONArray dates = r.getJSONArray("release_dates");
                     for (int j = 0; j < dates.length(); j++) {
                         String c = dates.getJSONObject(j).optString("certification");
@@ -264,7 +264,7 @@ public class DetailActivity extends Activity {
                 JSONArray results = o.getJSONObject("content_ratings").getJSONArray("results");
                 for (int i = 0; i < results.length(); i++) {
                     JSONObject r = results.getJSONObject(i);
-                    if (Tmdb.REGION.equals(r.optString("iso_3166_1"))) {
+                    if (Tmdb.region().equals(r.optString("iso_3166_1"))) {
                         String c = r.optString("rating");
                         return c.equals("L") ? Ui.tr("Livre", "All ages") : c.isEmpty() ? "" : c + "+";
                     }

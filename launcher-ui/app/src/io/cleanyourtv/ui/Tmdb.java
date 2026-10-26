@@ -32,7 +32,6 @@ final class Tmdb {
     static final String API = "https://api.themoviedb.org/3";
     static final String POSTER = "https://image.tmdb.org/t/p/w342", BACKDROP = "https://image.tmdb.org/t/p/w1280",
             LOGO = "https://image.tmdb.org/t/p/w92", PROFILE = "https://image.tmdb.org/t/p/w185";
-    static final String REGION = Config.TMDB_REGION.trim().isEmpty() ? "BR" : Config.TMDB_REGION.trim().toUpperCase(Locale.ROOT);
     /** In memory: the answers of the last half hour, a few dozen; on disk (DISK_MAX): for as long as ttl() says. */
     private static final long TTL = 30 * 60_000L, DISK_MAX = 24L * 1024 * 1024;
 
@@ -50,7 +49,14 @@ final class Tmdb {
         new Thread(Tmdb::prune, "tmdb-prune").start();
     }
 
-    static boolean hasKey() { return !Config.TMDB_KEY.trim().isEmpty(); }
+    static boolean hasKey() { return !Prefs.tmdbKey().isEmpty(); }
+
+    /** Country for "what streams where": config.json "tmdb_region", else the TV's own country, else US. */
+    static String region() {
+        String v = Prefs.tmdbRegion();
+        if (v.isEmpty() || v.equals("AUTO")) v = Locale.getDefault().getCountry().toUpperCase(Locale.ROOT);
+        return v.matches("[A-Z]{2}") ? v : "US";
+    }
 
     /** TMDB's language for the app's: titles, overviews and logos in it when TMDB has them. */
     static String lang() {
@@ -155,7 +161,7 @@ final class Tmdb {
     }
 
     private static String call(String method, String path, String body) throws IOException {
-        String key = Config.TMDB_KEY.trim();
+        String key = Prefs.tmdbKey();
         if (key.isEmpty()) throw new IOException(Ui.tr("sem chave do TMDB", "no TMDB key"));
         boolean bearer = key.startsWith("eyJ");
         String url = API + path + (bearer ? "" : (path.contains("?") ? "&" : "?") + "api_key=" + URLEncoder.encode(key, "UTF-8"));

@@ -1968,15 +1968,15 @@ public class ExploreActivity extends Activity {
 
     /** Only the person's services, as discover parameters ("" when there are none; region only with "show all"). */
     private String servicesParam() {
-        if (Prefs.showAllProviders()) return "&watch_region=" + Tmdb.REGION;
+        if (Prefs.showAllProviders()) return "&watch_region=" + Tmdb.region();
         StringBuilder ids = new StringBuilder();
         for (Service s : services()) ids.append(ids.length() == 0 ? "" : "|").append(s.ids);
-        return ids.length() == 0 ? "" : "&watch_region=" + Tmdb.REGION + "&with_watch_providers=" + ids
+        return ids.length() == 0 ? "" : "&watch_region=" + Tmdb.region() + "&with_watch_providers=" + ids
                 + "&with_watch_monetization_types=flatrate";
     }
 
     private static String discoverPath(String kind, String params) {
-        String region = params.contains("watch_region") ? "" : "&watch_region=" + Tmdb.REGION;
+        String region = params.contains("watch_region") ? "" : "&watch_region=" + Tmdb.region();
         return "/discover/" + kind + "?include_adult=false" + region + params;
     }
 
