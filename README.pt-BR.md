@@ -128,6 +128,10 @@ Este fork não altera os arquivos do original, com uma exceção: o `README.md` 
 copia o README novo do CleanYourTV para [`README.cleanyourtv.md`](README.cleanyourtv.md) e mantém os deste fork. Qualquer outro
 conflito vira uma issue com os comandos para resolver à mão.
 
+Os testes do CleanYourTV (`tests/`) leem o README dele, então aqui eles rodam pelo
+[`launcher-ui/test-upstream.sh`](launcher-ui/test-upstream.sh): o script copia o repositório para uma pasta
+temporária, põe lá o README do CleanYourTV como `README.md` e roda a suíte. Sua pasta e este README ficam como estão.
+
 ## Licença e uso
 
 Todo o código está sob a licença MIT: o do CleanYourTV UI ([`launcher-ui/LICENSE`](launcher-ui/LICENSE)), o do
