@@ -1,4 +1,7 @@
 {
+  "tmdb_key": "",
+  "tmdb_region": "auto",
+  "language": "auto",
   "shelf": [
     "com.netflix.ninja",
     "com.disney.disneyplus",
@@ -16,7 +19,11 @@
   },
   "theme": "auto",
   "temperature": "C",
+  "clock": "auto",
+  "screensaver": "photos",
   "weather": true,
+  "show_crypto": false,
+  "currency": "BRL",
   "buttons": {
     "s395": "tmdb:watchlist",
     "s204": "tmdb:explore",

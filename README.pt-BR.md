@@ -94,22 +94,30 @@ Code, Codex ou Gemini CLI), como no CleanYourTV.
 O assistente faz backup, o debloat, compila e instala a tela inicial e confere cada passo com prints da TV.
 Detalhes do debloat, dos modelos suportados e de como voltar estão no [README do CleanYourTV](README.cleanyourtv.md).
 
+## A partir do APK de release
+
+Um único APK serve para todas as TVs: baixe o `CleanYourTV-UI-<versão>.apk` em
+[releases](https://github.com/matheus-caldeira/cleanyourtv-ui/releases), instale com `adb install` e passe as
+configurações da TV (chave do TMDB, cidade, prateleira, botões do controle) por um `config.json` ou nos Ajustes da TV.
+Sem JDK, sem Android SDK, sem compilar. Os comandos e todas as chaves do `config.json` estão em
+[`launcher-ui/README.md`](launcher-ui/README.md); o [site](https://matheus-caldeira.github.io/cleanyourtv-ui-web/) tem um
+formulário que escreve o `config.json` para você.
+
 ## Instalar à mão
 
 1. Siga o [Quick start do CleanYourTV](README.cleanyourtv.md#quick-start) até aplicar a lista de debloat da sua TV.
-2. Crie a configuração e coloque sua chave do TMDB (grátis, em themoviedb.org → Settings → API) e sua cidade:
-   ```bash
-   cp launcher-ui/config.example.properties launcher-ui/config.properties
-   ```
-   `config.properties` fica fora do git. A chave é do app e continua necessária mesmo com o login por QR code: o
-   login só diz ao TMDB quem é você, para a sua lista e as suas notas.
+2. Escreva as configurações da TV num `config.json`: sua chave do TMDB (grátis, em themoviedb.org → Settings → API),
+   sua cidade, a prateleira e os botões do controle. Parta do `launcher-ui/config.example.json`; as chaves estão em
+   [`launcher-ui/README.md`](launcher-ui/README.md#configjson). A chave é do app e continua necessária mesmo com o
+   login por QR code: o login só diz ao TMDB quem é você, para a sua lista e as suas notas. (O `config.properties`
+   continua valendo num build pessoal, como valores iniciais.)
 3. Compile e instale (JDK 17 e Android SDK com build-tools 34+ e a platform android-34; sem Gradle):
    ```bash
-   TV_HOST=192.168.1.50 KEY_SERVICE=1 launcher-ui/build-and-install.sh
+   TV_HOST=192.168.1.50 CONFIG=meu-config.json KEY_SERVICE=1 launcher-ui/build-and-install.sh
    ```
    `KEY_SERVICE=1` liga o serviço dos botões do controle, uma vez: as reinstalações mantêm ligado. `SCREENSAVER=0`
-   mantém o screensaver atual.
-4. Opcional: `TV_HOST=… launcher-ui/config.sh meu-config.json` (veja `launcher-ui/config.example.json`) e
+   mantém o screensaver atual. `APK=<arquivo>` instala um APK de release em vez de compilar.
+4. Mudanças depois: `TV_HOST=… launcher-ui/config.sh meu-config.json` e
    `launcher-ui/config.sh --remote examples/<modelo>/remote.json`.
 
 O script tem as proteções do original: confere o Android antes de compilar, inicia a Home nova antes de mexer na

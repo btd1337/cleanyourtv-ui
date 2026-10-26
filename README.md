@@ -92,22 +92,29 @@ Gemini CLI), as with CleanYourTV.
 The assistant backs up, debloats, builds and installs the home screen, and checks each step with screenshots from the
 TV. The debloat, the supported TVs and how to go back are in [CleanYourTV's README](README.cleanyourtv.md).
 
+## From the release APK
+
+One APK serves every TV: download `CleanYourTV-UI-<version>.apk` from the
+[releases](https://github.com/matheus-caldeira/cleanyourtv-ui/releases), install it with `adb install`, and give the TV
+its settings (TMDB key, city, shelf, remote buttons) with a `config.json` or in Settings on the TV. No JDK, no Android
+SDK, no build. The commands, and every `config.json` key, are in [`launcher-ui/README.md`](launcher-ui/README.md); the
+[site](https://matheus-caldeira.github.io/cleanyourtv-ui-web/) has a form that writes `config.json` for you.
+
 ## Installing by hand
 
 1. Follow [CleanYourTV's Quick start](README.cleanyourtv.md#quick-start) up to applying your TV's debloat list.
-2. Create the settings with your TMDB key (free, at themoviedb.org → Settings → API) and your city:
-   ```bash
-   cp launcher-ui/config.example.properties launcher-ui/config.properties
-   ```
-   `config.properties` stays out of git. The key belongs to the app and is still needed with the QR sign-in: signing in
-   only tells TMDB who you are, for your list and ratings. `language=auto` follows the TV's language.
+2. Write this TV's settings in a `config.json`: your TMDB key (free, at themoviedb.org → Settings → API), your city,
+   the shelf and the remote's buttons. Start from `launcher-ui/config.example.json`; the keys are in
+   [`launcher-ui/README.md`](launcher-ui/README.md#configjson). The key belongs to the app and is still needed with the
+   QR sign-in: signing in only tells TMDB who you are, for your list and ratings. (`config.properties` still works for
+   a personal build, as the first values.)
 3. Build and install (JDK 17 and the Android SDK with build-tools 34+ and platform android-34; no Gradle):
    ```bash
-   TV_HOST=192.168.1.50 KEY_SERVICE=1 launcher-ui/build-and-install.sh
+   TV_HOST=192.168.1.50 CONFIG=my-config.json KEY_SERVICE=1 launcher-ui/build-and-install.sh
    ```
    `KEY_SERVICE=1` turns on the remote-button service, once: reinstalls keep it on. `SCREENSAVER=0` keeps the
-   current screensaver.
-4. Optional: `TV_HOST=… launcher-ui/config.sh my-config.json` (see `launcher-ui/config.example.json`) and
+   current screensaver. `APK=<file>` installs a release APK instead of building one.
+4. Later changes: `TV_HOST=… launcher-ui/config.sh my-config.json`, and
    `launcher-ui/config.sh --remote examples/<model>/remote.json`.
 
 The script keeps the original's safeguards: it checks Android before building, starts the new Home before touching the

@@ -1,7 +1,20 @@
 #!/usr/bin/env bash
 # Build the CleanYourTV UI home screen and install it on the TV as the default home screen.
 # Same contract as launcher/build-and-install.sh: TV_HOST, STOCK_LAUNCHER, and a rollback when Home does not land.
+#
+#   TV_HOST=192.168.1.50 launcher-ui/build-and-install.sh                                  # build here, then install
+#   TV_HOST=192.168.1.50 APK=~/Downloads/CleanYourTV-UI.apk launcher-ui/build-and-install.sh  # a release APK, no build
+#   ... CONFIG=my-config.json ...                                       # and push this TV's config.json at the end
 set -euo pipefail
+# APK and CONFIG are paths as the caller typed them: resolve them before moving into launcher-ui/.
+for v in APK CONFIG; do
+  eval "f=\${$v:-}"
+  if [ -n "$f" ]; then
+    case "$f" in /*|[A-Za-z]:[\\/]*) ;; *) f="$(pwd)/$f" ;; esac
+    [ -f "$f" ] || { echo "$v=$f: no such file" >&2; exit 1; }
+    eval "$v=\$f"
+  fi
+done
 cd "$(dirname "$0")"
 : "${TV_HOST:?set TV_HOST to the TV IP address, e.g. TV_HOST=192.168.1.50 $0}"
 TOOLS="$(cd ../tools && pwd)"
@@ -23,6 +36,9 @@ if [ -n "$MIN_SDK" ] && [ -n "$TV_SDK" ] && [ "$TV_SDK" -lt "$MIN_SDK" ]; then
   exit 1
 fi
 
+if [ -n "${APK:-}" ]; then
+  echo "Installing $APK (no build)."
+else
 if [ -z "${JAVA_HOME:-}" ]; then
   JH="$(/usr/libexec/java_home -v 17 2>/dev/null || true)"
   if [ -n "$JH" ]; then
@@ -33,6 +49,7 @@ if [ -z "${JAVA_HOME:-}" ]; then
 fi
 ./build.sh
 APK=CleanYourTV-UI.apk
+fi
 
 # Which app owns Home now. A stock launcher this script knows is disabled once ours is running; the original
 # CleanYourTV launcher (com.gathin.tvhome) is left installed and enabled, so switching back is one command.
@@ -124,5 +141,6 @@ if [ "${KEY_SERVICE:-0}" = 1 ] || tv "settings get secure enabled_accessibility_
   svc=$PKG/.RemoteKeyService
   tv "s=\$(settings get secure enabled_accessibility_services); case \"\$s\" in *$svc*) settings put secure enabled_accessibility_services ''; settings put secure accessibility_enabled 0; sleep 1; settings put secure enabled_accessibility_services \"\$s\" ;; null|'') settings put secure enabled_accessibility_services $svc ;; *) settings put secure enabled_accessibility_services \"\$s:$svc\" ;; esac; settings put secure accessibility_enabled 1; echo remote buttons enabled"
 fi
+if [ -n "${CONFIG:-}" ]; then ./config.sh "$CONFIG"; fi
 echo "Installed. Press Home on the remote to see it. Back to CleanYourTV's own launcher:"
 echo "  TV_HOST=$TV_HOST launcher/build-and-install.sh   (or, if it is still installed: tools/tv.py 'cmd package set-home-activity --user 0 com.gathin.tvhome/.MainActivity')"

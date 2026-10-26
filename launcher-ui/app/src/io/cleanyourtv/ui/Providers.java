@@ -61,13 +61,13 @@ final class Providers {
         if (cached != null && System.currentTimeMillis() - cachedAt < 6 * 3600_000L) return cached;
         Map<Integer, Provider> byId = new LinkedHashMap<>();
         for (String kind : new String[] {"tv", "movie"}) {
-            JSONArray results = Tmdb.get("/watch/providers/" + kind + "?watch_region=" + Tmdb.REGION).optJSONArray("results");
+            JSONArray results = Tmdb.get("/watch/providers/" + kind + "?watch_region=" + Tmdb.region()).optJSONArray("results");
             for (int i = 0; results != null && i < results.length(); i++) {
                 JSONObject o = results.getJSONObject(i);
                 int id = o.getInt("provider_id");
                 if (byId.containsKey(id)) continue;
                 JSONObject prio = o.optJSONObject("display_priorities");
-                int priority = prio != null && prio.has(Tmdb.REGION) ? prio.getInt(Tmdb.REGION) : o.optInt("display_priority", 999);
+                int priority = prio != null && prio.has(Tmdb.region()) ? prio.getInt(Tmdb.region()) : o.optInt("display_priority", 999);
                 byId.put(id, new Provider(id, o.optString("provider_name"), o.optString("logo_path"), priority));
             }
         }

@@ -88,9 +88,6 @@ final class Recs {
         SERVICE_NAME.put("max", "Max");
         SERVICE_NAME.put("appletv", "Apple TV");
     }
-    /** Country for "what streams where" (config.properties "tmdb_region", e.g. US, GB, BR). */
-    private static final String REGION = Config.TMDB_REGION.trim().toUpperCase(Locale.ROOT);
-
     private static Recs instance;
 
     /** Lets go of the pictures not on screen, only where the recommendations were loaded (the home's process). */
@@ -140,7 +137,7 @@ final class Recs {
     void removeListener(Listener l) { listeners.remove(l); }
 
     static boolean hasKey(Context c) {
-        return !Config.TMDB_KEY.trim().isEmpty();
+        return Tmdb.hasKey();
     }
 
     /** Last fetch, for the settings screen: {count, error, at}. Written by the home screen (another process). */
@@ -420,7 +417,7 @@ final class Recs {
     private void fetchList(int p) throws Exception {
         // The services the TV has, by their TMDB ids in your region.
         Map<Integer, String[]> services = new HashMap<>();
-        JSONArray providers = get("/watch/providers/movie?language=" + lang() + "&watch_region=" + REGION).getJSONArray("results");
+        JSONArray providers = get("/watch/providers/movie?language=" + lang() + "&watch_region=" + Tmdb.region()).getJSONArray("results");
         for (int i = 0; i < providers.length(); i++) {
             JSONObject o = providers.getJSONObject(i);
             int pid = o.getInt("provider_id");
@@ -430,7 +427,7 @@ final class Recs {
         if (services.isEmpty()) throw new IOException("none of the TV's streaming services are on TMDB");
         StringBuilder ids = new StringBuilder();
         for (int id : services.keySet()) ids.append(ids.length() == 0 ? "" : "|").append(id);
-        String common = "&language=" + lang() + "&watch_region=" + REGION + "&with_watch_monetization_types=flatrate&include_adult=false"
+        String common = "&language=" + lang() + "&watch_region=" + Tmdb.region() + "&with_watch_monetization_types=flatrate&include_adult=false"
                 + "&sort_by=popularity.desc&with_watch_providers=" + URLEncoder.encode(ids.toString(), "UTF-8");
         // 1. Trending this week (TMDB goes by what people are watching and searching for right now), only what is
         //    on one of the TV's services: the details say where (and are then ready).
@@ -546,7 +543,7 @@ final class Recs {
             else if (seasons > 0) parts.add(seasons == 1 ? "1 temporada" : seasons + " temporadas");
         }
         JSONObject wp = o.optJSONObject("watch/providers");
-        JSONObject br = wp == null ? null : wp.optJSONObject("results") == null ? null : wp.optJSONObject("results").optJSONObject(REGION);
+        JSONObject br = wp == null ? null : wp.optJSONObject("results") == null ? null : wp.optJSONObject("results").optJSONObject(Tmdb.region());
         JSONArray flat = br == null ? null : br.optJSONArray("flatrate");
         for (int i = 0; flat != null && i < flat.length() && p.app == null; i++) {
             JSONObject fp = flat.getJSONObject(i);
@@ -665,7 +662,7 @@ final class Recs {
     }
 
     private long sourceStamp() {
-        long stamp = Config.TMDB_KEY.hashCode() * 31L + REGION.hashCode();
+        long stamp = Prefs.tmdbKey().hashCode() * 31L + Tmdb.region().hashCode();
         for (String[] service : SERVICES) stamp = stamp * 31L + (installed(service[2]) ? service[2].hashCode() : 0);
         stamp = stamp * 31L + Prefs.providersStamp();
         return stamp;
@@ -692,7 +689,7 @@ final class Recs {
     }
 
     private String readKey() {
-        String key = Config.TMDB_KEY.trim();
+        String key = Prefs.tmdbKey();
         return key.isEmpty() ? null : key;
     }
 

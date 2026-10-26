@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Settings changed on the TV itself (CleanYourTV UI > Settings). config.properties only gives the first
- * values; anything the user changes here wins. Read from the :home process (home screen, screensaver, settings).
+ * Settings changed on the TV itself (CleanYourTV UI > Settings) or by a pushed config.json (TvConfig). config.properties
+ * only gives the first values of a personal build; a release APK has none. Read from the :home process (home screen, screensaver, settings).
  */
 final class Prefs {
     private Prefs() {}
@@ -108,6 +108,31 @@ final class Prefs {
         sp().edit().putString("city", name).putString("latitude", latitude).putString("longitude", longitude).apply();
         version++;
     }
+
+    // MARK: - TMDB and currency (config.json or the TV's Settings; config.properties only for a personal build)
+
+    /** The TMDB API key or read access token; empty means no picks and no Explore. */
+    static String tmdbKey() {
+        return app == null ? Config.TMDB_KEY.trim() : sp().getString("tmdbKey", Config.TMDB_KEY).trim();
+    }
+
+    static void setTmdbKey(String key) { put("tmdbKey", key.trim()); }
+
+    /** Two letters (US, BR, GB...), or "" for the TV's own country. */
+    static String tmdbRegion() {
+        String v = app == null ? Config.TMDB_REGION : sp().getString("tmdbRegion", Config.TMDB_REGION);
+        return v.trim().toUpperCase(Locale.ROOT);
+    }
+
+    static void setTmdbRegion(String region) { put("tmdbRegion", region.trim().toUpperCase(Locale.ROOT)); }
+
+    /** The quotes' currency: USD, BRL, EUR, TRY... */
+    static String currency() {
+        String v = (app == null ? Config.CURRENCY : sp().getString("currency", Config.CURRENCY)).trim().toUpperCase(Locale.ROOT);
+        return v.matches("[A-Z]{3}") ? v : "USD";
+    }
+
+    static void setCurrency(String currency) { put("currency", currency.trim().toUpperCase(Locale.ROOT)); }
 
     // MARK: - Widgets and coins
 

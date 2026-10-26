@@ -27,6 +27,7 @@ import android.view.accessibility.AccessibilityNodeProvider;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -358,6 +359,7 @@ public class SettingsActivity extends Activity {
         }
 
         private String account() {
+            if (!Tmdb.hasKey()) return Ui.tr("Sem chave", "No key");
             return Tmdb.signedIn(getContext()) ? Tmdb.accountName(getContext()) : Ui.tr("Não conectada", "Not connected");
         }
 
@@ -368,7 +370,7 @@ public class SettingsActivity extends Activity {
             String line;
             String error = recs.optString("error");
             int count = recs.optInt("count");
-            if (!hasKey) line = Ui.tr("Sem chave do TMDB: veja o README (config.properties).", "No TMDB key: see the README (config.properties).");
+            if (!hasKey) line = Ui.tr("Sem chave do TMDB: digite a sua em Conta TMDB.", "No TMDB key: type yours under TMDB account.");
             else if (!error.isEmpty()) line = Ui.tr("Erro: ", "Error: ") + error + ".";
             else if (count > 0) line = Ui.tr("Ligadas · " + count + " títulos nos apps da TV, 3 novos a cada hora.",
                     "On · " + count + " titles from the TV's apps, 3 new ones every hour.");
@@ -501,7 +503,7 @@ public class SettingsActivity extends Activity {
         }
 
         private boolean dollar() {
-            return "BRL".equalsIgnoreCase(Config.CURRENCY.trim());
+            return "BRL".equals(Prefs.currency());
         }
 
         private String[] settingLabels() {
@@ -646,6 +648,39 @@ public class SettingsActivity extends Activity {
                 return true;
             });
             dialog.show();
+        }
+
+        /** The TMDB key (themoviedb.org > Settings > API, free): the picks and Explore need it, the QR sign-in too. */
+        private void askTmdbKey() {
+            EditText field = new EditText(activity);
+            field.setSingleLine(true);
+            field.setHint(Ui.tr("Chave da API ou token de leitura", "API key or read access token"));
+            field.setImeOptions(EditorInfo.IME_ACTION_DONE);
+            AlertDialog dialog = new AlertDialog.Builder(activity, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                    .setTitle(Ui.tr("Chave do TMDB", "TMDB key"))
+                    .setMessage(Ui.tr("Grátis em themoviedb.org › Configurações › API.", "Free at themoviedb.org › Settings › API."))
+                    .setView(field)
+                    .setPositiveButton(Ui.tr("Salvar", "Save"), (d, which) -> saveTmdbKey(field.getText().toString()))
+                    .setNegativeButton(Ui.tr("Cancelar", "Cancel"), null)
+                    .create();
+            field.setOnEditorActionListener((v, action, event) -> {
+                dialog.dismiss();
+                saveTmdbKey(field.getText().toString());
+                return true;
+            });
+            dialog.show();
+        }
+
+        private void saveTmdbKey(String key) {
+            key = key.trim();
+            if (!TvConfig.validTmdbKey(key)) {
+                Toast.makeText(activity, Ui.tr("Essa chave não parece do TMDB.", "That doesn't look like a TMDB key."), Toast.LENGTH_LONG).show();
+                return;
+            }
+            Prefs.setTmdbKey(key);
+            hasKey = true;
+            HomeData.get(getContext()).settingsChanged();
+            invalidate();
         }
 
         private void searchCity(String name) {
@@ -909,7 +944,8 @@ public class SettingsActivity extends Activity {
             } else if (focus == 4) {
                 activity.startActivity(new Intent(c, ServicesActivity.class));
             } else if (focus == 5) {
-                activity.startActivity(new Intent(c, TmdbLoginActivity.class));
+                // A release APK comes without a key: it is typed here once (or pushed in config.json "tmdb_key").
+                if (Tmdb.hasKey()) activity.startActivity(new Intent(c, TmdbLoginActivity.class)); else askTmdbKey();
             } else {
                 activity.startActivity(new Intent(Settings.ACTION_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             }
