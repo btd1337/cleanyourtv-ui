@@ -1,18 +1,68 @@
 CleanYourTV UI
 Copyright (c) 2026 Matheus Caldeira (https://github.com/matheus-caldeira)
 
+Licence
+-------
+What this repository adds (launcher-ui/ and the changes on top of the two projects below) is under the MIT License,
+see LICENSE. All the code in this repository is MIT, so it can be used, changed and shared, commercially too, as long
+as the copyright notices and licence texts below stay with it. It comes "as is", without warranty: whoever installs
+it on a TV, their own or someone else's, is responsible for that installation.
+
+This project mixes several things, each with its own owner and terms: two MIT projects, a typeface, icon sets, online
+services and other companies' trademarks. The MIT License covers the code; the sections below say what it does not
+cover, and those terms apply on top of it.
+
+Code
+----
 This home screen is a fork of CleanYourTV's companion launcher idea with the look and much of the code of
 Free My TV. Both are under the MIT License.
 
 - CleanYourTV, Copyright (c) 2026 Gathin, https://github.com/Gathin23/cleanyourtv
-  (the repository this one forks: tools/, examples/, launcher/ and the rest; see ../LICENSE)
+  (the repository this one forks: tools/, examples/, launcher/ and the rest; see ../LICENSE. The Outfit typeface in
+  launcher/ is under the SIL Open Font License 1.1, see ../launcher/FONT-LICENSE-OFL.txt)
 - Free My TV, Copyright (c) 2026 Free My TV contributors, https://github.com/simbasjungles/free-my-tv
   (the home screen, settings, screensaver and recommendations code in app/, from commit ffa23c7;
   see LICENSE.free-my-tv)
 
-Third-party material that came with Free My TV keeps its own terms: the Inter typeface (SIL Open Font License 1.1),
-Material Symbols (Apache License 2.0), and the coin logos from cryptocurrency-icons (CC0). This product uses the TMDB
-API but is not endorsed or certified by TMDB. Weather data by Open-Meteo.com (CC BY 4.0).
+The app has no libraries of its own: besides its sources it uses only the Android platform (org.json included).
 
-The YouTube shelf logo (app/assets/logos/youtube.png) is the one Free My TV ships in web/icons/; YouTube and its
-logo are trademarks of Google LLC. Other app logos on the shelf are lifted at runtime from each app's own TV art.
+Fonts, icons and art
+--------------------
+Third-party material that came with Free My TV keeps its own terms:
+- the Inter typeface, SIL Open Font License 1.1 (app/assets/fonts/OFL.txt);
+- Material Symbols, Apache License 2.0 (app/assets/symbols/LICENSE-material-symbols.txt);
+- the coin logos from cryptocurrency-icons, CC0.
+
+The app icon and banner (app/res/drawable-nodpi/) and the two symbols Explore adds are drawn by art/MakeArt.java and
+art/MakeSymbols.java in this repository, under its MIT License.
+
+Online services
+---------------
+The app talks to these, each under its own terms, which the MIT License does not cover. It sends them no analytics
+and no telemetry, only the requests needed to show their data.
+- TMDB (titles, pictures, where to stream, your list; api.themoviedb.org, image.tmdb.org):
+  https://www.themoviedb.org/api-terms-of-use. This product uses the TMDB API but is not endorsed or certified by
+  TMDB. The free API key is for non-commercial use; TMDB licenses commercial use separately.
+- Open-Meteo (weather and the city search; api.open-meteo.com, geocoding-api.open-meteo.com):
+  https://open-meteo.com/en/terms. The data is CC BY 4.0; the free API is for non-commercial use, and commercial use
+  needs one of its plans.
+- Wikidata (each title's id on the streaming services; www.wikidata.org): data under CC0,
+  https://www.wikidata.org/wiki/Wikidata:Licensing.
+- Binance (crypto prices; api.binance.com), only with show_crypto=true, which is off by default:
+  https://www.binance.com/en/terms.
+
+"Watch on..." and trailers open the title in its own app, through that service's link (Netflix, Prime Video,
+Disney+, Apple TV, Max, YouTube). The app sends nothing to those services itself; the opened app follows its own terms.
+
+Trademarks
+----------
+The YouTube shelf logo (app/assets/logos/youtube.png) is the one Free My TV ships in web/icons/; YouTube and its logo
+are trademarks of Google LLC. Other app logos on the shelf are lifted at runtime from each app's own TV art. Service
+names and logos (Netflix, Prime Video, Disney+, Apple TV, Max, YouTube, TMDB and the rest) belong to their owners.
+Neither this project nor CleanYourTV or Free My TV is affiliated with or endorsed by them, and nothing built on this
+project should present itself as an official product of any of them.
+
+A request
+---------
+Not a condition of the licence: if you build on this or use it in a service, please credit and link
+https://github.com/matheus-caldeira/cleanyourtv-ui, so other people can find it and use it on their own TVs.
