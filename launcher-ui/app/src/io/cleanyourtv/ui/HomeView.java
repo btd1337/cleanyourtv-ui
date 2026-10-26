@@ -1348,19 +1348,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /**
      * Logo at its "optical" size (all with the same amount of ink, plus each one's own adjustment, never past 80% × 62%
      * of the tile), centered and already filtered down to the focused tile size: when focused it is drawn pixel for
-     * pixel, without resampling.
+     * pixel, without resampling. Its center is rounded once, for the focused size, and kept at every size: rounding only
+     * at the end of the focus animation made the logo jump up to a pixel.
      */
     private void drawLogo(Canvas c, HomeApps.Item it, RectF box, float s, int mode) {
         Bitmap logo = crispLogo(it, mode == 2 && it.logoDark != null);
         if (logo == null) return;
         float scale = s / (1 + FOCUS_GROW);
-        float dw = logo.getWidth() * scale, dh = logo.getHeight() * scale;
-        float left = box.centerX() - dw / 2, top = box.centerY() - dh / 2;
-        if (scale > 0.998f) {
-            left = Math.round(left);
-            top = Math.round(top);
-        }
-        tmp.set(left, top, left + dw, top + dh);
+        float w = logo.getWidth(), h = logo.getHeight();
+        float x = Math.round(box.centerX() - w / 2) + w / 2, y = Math.round(box.centerY() - h / 2) + h / 2;
+        tmp.set(x - w * scale / 2, y - h * scale / 2, x + w * scale / 2, y + h * scale / 2);
         bitmapPaint.setColorFilter(mode == 1 ? whiteLogo : null);
         c.drawBitmap(logo, null, tmp, bitmapPaint);
         bitmapPaint.setColorFilter(null);
