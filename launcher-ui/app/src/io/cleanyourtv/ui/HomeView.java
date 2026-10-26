@@ -140,10 +140,13 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private int tab, topIndex, cardIndex;
     private int widgetIndex;    // with TalkBack on, the drawer's weather (0) or quotes (1) card can take the focus
     private List<Recs.Pick> cards = new ArrayList<>();
-    // The cards page through the tab's picks three at a time: → past the last card turns the page, and past the last
-    // page goes on to the next tab (Explore, Movies, Shows, then Explore again); ← the other way. Only full pages: the
-    // leftover picks of a last, short page are skipped.
-    private int page, pages = 1;
+    // One flat run of pages, three cards each: every full page of Explore, then of Movies, then of Shows, and round
+    // again. → past the last card moves on one page, ← back one; the tabs follow, and choosing a tab jumps to its
+    // first page. The leftover picks of a tab's short last page are skipped, so no card is ever empty.
+    private int page;                                   // in the whole run
+    private final int[] tabFirst = new int[4];          // the run's first page of each tab; [3] = the number of pages
+    @SuppressWarnings("unchecked")
+    private final List<Recs.Pick>[] tabPicks = new List[3];
     private final Spring[] topFocus = new Spring[6];
     private final RectF[] topRects = new RectF[6];
     private final Spring[] cardFocus = new Spring[3];
@@ -2666,12 +2669,18 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         heroDirty = statusDirty = true;
     }
 
-    /** The three cards of the current tab's page (Explore, Movies, Shows) and the background from the first one. */
+    /** The three cards of the current page and the background from the first one; the pages around it get ready. */
     private void updateCards() {
-        List<Recs.Pick> all = recs.all(TAB_KIND[tab]);
-        pages = Math.max(1, all.size() / 3);
-        page = Math.min(page, pages - 1);
-        List<Recs.Pick> list = new ArrayList<>(all.subList(Math.min(all.size(), page * 3), Math.min(all.size(), page * 3 + 3)));
+        // Where we are in the tab: a new list (every hour, or details that drop a pick) keeps the tab and the page.
+        int inTab = Math.max(0, page - tabFirst[tab]);
+        for (int t = 0; t < 3; t++) {
+            tabPicks[t] = recs.all(TAB_KIND[t]);
+            int pages = tabPicks[t].isEmpty() ? 0 : Math.max(1, tabPicks[t].size() / 3);
+            tabFirst[t + 1] = tabFirst[t] + pages;
+        }
+        int total = tabFirst[3], pages = tabFirst[tab + 1] - tabFirst[tab];
+        page = tabFirst[tab] + Math.min(inTab, Math.max(0, pages - 1));
+        List<Recs.Pick> list = pages > 0 ? pageCards(page) : new ArrayList<>();
         if (!samePicks(list, cards)) {
             cards = list;
             cardIndex = Math.min(cardIndex, Math.max(0, list.size() - 1));
@@ -2680,12 +2689,20 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 retarget(false);
             }
         }
-        if (page == 0) {
-            for (Recs.Pick p : recs.wanted()) recs.backdrop(p);   // all three tabs preloaded: switching tabs is instant
-        } else {
-            // Past the first page only this one: Recs keeps 10 images, and the tabs' first pages would push it out.
-            for (Recs.Pick p : cards) recs.backdrop(p);
-            recs.details(cards);
+        // Recs keeps the 10 images used last: this page and the two it can turn to (9), or with the focus on the tabs,
+        // this page and the other tabs' first pages, so the next move never waits for a photo.
+        for (Recs.Pick p : cards) recs.backdrop(p);
+        if (pages > 0 && total > 1) {
+            List<Recs.Pick> near = new ArrayList<>();
+            if (zone == Z_TOP) {
+                for (int t = 0; t < 3; t++) if (t != tab && tabFirst[t + 1] > tabFirst[t]) near.addAll(pageCards(tabFirst[t]));
+            } else {
+                near.addAll(pageCards(Math.floorMod(page + 1, total)));
+                near.addAll(pageCards(Math.floorMod(page - 1, total)));
+            }
+            for (Recs.Pick p : near) recs.backdrop(p);
+            near.addAll(cards);
+            recs.details(near);
         }
         Backdrop b = cards.isEmpty() ? null : recs.backdrop(cards.get(0));
         if (cards.isEmpty() || b != null) showBackdrop(b);
@@ -2693,22 +2710,30 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         spoken.focusMoved();    // new picks under the focused card
     }
 
-    /** The next (1) or previous (-1) tab with picks, on its first or last page; the tabs go round. */
-    private void turnTab(int dir) {
-        for (int n = 1; n <= 3; n++) {
-            int next = (tab + dir * n + 3) % 3;
-            int size = recs.all(TAB_KIND[next]).size();
-            if (size == 0) continue;
-            tab = next;
-            page = dir > 0 ? 0 : Math.max(1, size / 3) - 1;
-            return;
-        }
+    /** The tab a page of the run belongs to. */
+    private int tabOf(int p) {
+        return p < tabFirst[1] ? 0 : p < tabFirst[2] ? 1 : 2;
+    }
+
+    /** A page's three picks (fewer only when the tab has fewer than three). */
+    private List<Recs.Pick> pageCards(int p) {
+        int t = tabOf(p);
+        List<Recs.Pick> all = tabPicks[t];
+        int from = Math.min(all.size(), (p - tabFirst[t]) * 3);
+        return new ArrayList<>(all.subList(from, Math.min(all.size(), from + 3)));
+    }
+
+    /** One page on (1) or back (-1) in the run, into the next or previous tab past its ends, and round. */
+    private void turnPage(int d) {
+        page = Math.floorMod(page + d, tabFirst[3]);
+        tab = tabOf(page);
+        updateCards();
     }
 
     private void selectTab(int index) {
         if (index == tab) return;
         tab = index;
-        page = 0;
+        page = tabFirst[index];
         updateCards();
         heroDirty = true;
     }
@@ -2934,15 +2959,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 }
                 break;
             case Z_CARDS:
-                if (dx > 0 && cardIndex == cards.size() - 1) {
-                    if (page + 1 < pages) page++;
-                    else turnTab(1);
-                    updateCards();
+                if (dx > 0 && cardIndex == cards.size() - 1 && tabFirst[3] > 1) {
+                    turnPage(1);
                     cardIndex = 0;
-                } else if (dx < 0 && cardIndex == 0) {
-                    if (page > 0) page--;
-                    else turnTab(-1);
-                    updateCards();
+                } else if (dx < 0 && cardIndex == 0 && tabFirst[3] > 1) {
+                    turnPage(-1);
                     cardIndex = Math.max(0, cards.size() - 1);
                 } else if (dx != 0) {
                     int next = Math.max(0, Math.min(cards.size() - 1, cardIndex + dx));
@@ -2951,6 +2972,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 } else if (dy < 0) {
                     zone = Z_TOP;
                     topIndex = tab;     // as on Apple TV: moving up to the tabs focuses the selected tab
+                    updateCards();      // ready the other tabs' first pages
                 } else {
                     zone = Z_SHELF;
                     if (!shelf.isEmpty()) shelfIndex = nearest(tileRects, tileRects.length, cardRects[cardIndex].centerX());
@@ -2968,6 +2990,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                     } else {
                         zone = Z_CARDS;
                         cardIndex = nearest(cardRects, cards.size(), topRects[topIndex].centerX());
+                        updateCards();      // ready the pages ← → turn to
                     }
                 } else if (topIndex < 3) {
                     topIndex = 3;   // up from the tabs: the Explore button, the first of the round ones
