@@ -140,9 +140,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private int tab, topIndex, cardIndex;
     private int widgetIndex;    // with TalkBack on, the drawer's weather (0) or quotes (1) card can take the focus
     private List<Recs.Pick> cards = new ArrayList<>();
-    // The cards page through the tab's picks three at a time, round and round: → past the last card turns the page,
-    // and the last page leads back to the first. Only full pages: the leftover picks of a last, short page are skipped.
-    // One dot per page after the tabs, like the banners in Explore.
+    // The cards page through the tab's picks three at a time: → past the last card turns the page, and past the last
+    // page goes on to the next tab (Explore, Movies, Shows, then Explore again); ← the other way. Only full pages: the
+    // leftover picks of a last, short page are skipped.
     private int page, pages = 1;
     private final Spring[] topFocus = new Spring[6];
     private final RectF[] topRects = new RectF[6];
@@ -2693,6 +2693,18 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         spoken.focusMoved();    // new picks under the focused card
     }
 
+    /** The next (1) or previous (-1) tab with picks, on its first or last page; the tabs go round. */
+    private void turnTab(int dir) {
+        for (int n = 1; n <= 3; n++) {
+            int next = (tab + dir * n + 3) % 3;
+            int size = recs.all(TAB_KIND[next]).size();
+            if (size == 0) continue;
+            tab = next;
+            page = dir > 0 ? 0 : Math.max(1, size / 3) - 1;
+            return;
+        }
+    }
+
     private void selectTab(int index) {
         if (index == tab) return;
         tab = index;
@@ -2777,19 +2789,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < 3; i++) if (cardFocus[i].value > 0.02f && (top < 0 || cardFocus[i].value > cardFocus[top].value)) top = i;
         for (int i = 0; i < 3; i++) if (i != top) drawLightCard(c, i);
         if (top >= 0) drawLightCard(c, top);
-        drawPageDots(c);
         if (HomeData.coinCount() > 0) drawQuotes(c);
-    }
-
-    /** A dot per page after the tabs, the current one solid (Explore's banners: 12 px, 10 px apart). */
-    private void drawPageDots(Canvas c) {
-        if (pages <= 1 || cards.isEmpty()) return;
-        float r = 6 * k, step = 22 * k, x = topRects[2].right + 28 * k + r, cy = topRects[2].centerY();
-        fill.setShader(null);
-        for (int i = 0; i < pages; i++) {
-            fill.setColor(i == page ? tone(L_INK, WHITE) : tone(0x4D1C1C1E, 0x59FFFFFF));
-            c.drawCircle(x + i * step, cy, r, fill);
-        }
     }
 
     private boolean picksOn() {
@@ -2934,14 +2934,16 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 }
                 break;
             case Z_CARDS:
-                if (dx > 0 && cardIndex == cards.size() - 1 && pages > 1) {
-                    page = (page + 1) % pages;
+                if (dx > 0 && cardIndex == cards.size() - 1) {
+                    if (page + 1 < pages) page++;
+                    else turnTab(1);
                     updateCards();
                     cardIndex = 0;
-                } else if (dx < 0 && cardIndex == 0 && pages > 1) {
-                    page = (page + pages - 1) % pages;
+                } else if (dx < 0 && cardIndex == 0) {
+                    if (page > 0) page--;
+                    else turnTab(-1);
                     updateCards();
-                    cardIndex = cards.size() - 1;
+                    cardIndex = Math.max(0, cards.size() - 1);
                 } else if (dx != 0) {
                     int next = Math.max(0, Math.min(cards.size() - 1, cardIndex + dx));
                     if (next == cardIndex) return true;
