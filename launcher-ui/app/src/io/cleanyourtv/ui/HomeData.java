@@ -393,6 +393,18 @@ final class HomeData {
             if (code >= 95) return "Orages";
             return "Pluie";
         }
+        if (Ui.tur) {
+            if (code == 0) return day ? "Güneşli" : "Açık";
+            if (code == 1) return day ? "Çoğunlukla güneşli" : "Çoğunlukla açık";
+            if (code == 2) return "Parçalı bulutlu";
+            if (code == 3) return "Bulutlu";
+            if (code == 45 || code == 48) return "Sis";
+            if (code >= 51 && code <= 57) return "Çisenti";
+            if (code == 65 || code == 67 || code == 82) return "Şiddetli yağmur";
+            if (code >= 71 && code <= 77 || code == 85 || code == 86) return "Kar";
+            if (code >= 95) return "Gök gürültülü fırtına";
+            return "Yağmur";
+        }
         if (code == 0) return day ? "Céu limpo" : "Noite limpa";
         if (code == 1) return "Poucas nuvens";
         if (code == 2) return "Parcialmente nublado";
@@ -408,6 +420,7 @@ final class HomeData {
     private static String currencySymbol() {
         switch (CURRENCY) {
             case "USD": return "$";
+            case "TRY": return "₺";
             case "BRL": return "R$ ";
             case "EUR": return "€";
             case "GBP": return "£";
@@ -437,7 +450,7 @@ final class HomeData {
 
     static String hour(long at) {
         return Ui.once("hour", at, () -> Ui.en ? new SimpleDateFormat("h a", Locale.US).format(new java.util.Date(at))
-                : new SimpleDateFormat(Ui.es || Ui.ru ? "HH:mm" : Ui.de ? "HH 'Uhr'" : "HH'h'", Ui.locale()).format(new java.util.Date(at)));
+                : new SimpleDateFormat(Ui.es || Ui.ru || Ui.tur ? "HH:mm" : Ui.de ? "HH 'Uhr'" : "HH'h'", Ui.locale()).format(new java.util.Date(at)));
     }
 
     /** How long ago the data was fetched, if it's stale (no internet): "12 min ago". */
@@ -451,6 +464,7 @@ final class HomeData {
         if (Ui.es) return minutes < 60 ? "hace " + minutes + " min" : "hace " + (minutes / 60) + " h";
         if (Ui.de) return minutes < 60 ? "vor " + minutes + " Min." : "vor " + (minutes / 60) + " Std.";
         if (Ui.fr) return minutes < 60 ? "il y a " + minutes + " min" : "il y a " + (minutes / 60) + " h";
+        if (Ui.tur) return minutes < 60 ? minutes + " dk önce" : (minutes / 60) + " sa önce";
         return minutes < 60 ? "há " + minutes + " min" : "há " + (minutes / 60) + " h";
     }
 }

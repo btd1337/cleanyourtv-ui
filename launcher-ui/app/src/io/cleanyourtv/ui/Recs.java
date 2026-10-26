@@ -45,6 +45,7 @@ final class Recs {
         String kind;            // "movie" or "tv"
         String title, backdrop, meta = "", app, pkg;
         boolean detailed;
+        boolean localized;      // the title reads in the TV's language (not saved: it only orders a fresh list)
     }
 
     interface Listener { void onRecs(); }
@@ -53,7 +54,7 @@ final class Recs {
     private static final String IMAGES = "https://image.tmdb.org/t/p/original";
     private static final long LIST_EVERY = 6 * 3600_000L;
     /** Bump when what is saved for each title changes (the saved list is discarded and fetched again). */
-    private static final int CACHE_VERSION = 3;
+    private static final int CACHE_VERSION = 4;
     private static final int MANHA = 0, TARDE = 1, NOITE = 2;
     static final String[] PERIOD_LABEL = {"PARA ESTA MANHÃ", "PARA ESTA TARDE", "PARA ESTA NOITE"};
     static final String[] PERIOD_LABEL_RU = {"ЭТИМ УТРОМ", "СЕГОДНЯ ДНЁМ", "СЕГОДНЯ ВЕЧЕРОМ"};
@@ -61,6 +62,7 @@ final class Recs {
     static final String[] PERIOD_LABEL_ES = {"PARA ESTA MAÑANA", "PARA ESTA TARDE", "PARA ESTA NOCHE"};
     static final String[] PERIOD_LABEL_DE = {"HEUTE MORGEN", "HEUTE NACHMITTAG", "HEUTE ABEND"};
     static final String[] PERIOD_LABEL_FR = {"CE MATIN", "CET APRÈS-MIDI", "CE SOIR"};
+    static final String[] PERIOD_LABEL_TR = {"BU SABAH", "BU ÖĞLEDEN SONRA", "BU AKŞAM"};
     /** Service name on TMDB (part of the name, lowercase) → TV app (HomeApps key, package). */
     private static final String[][] SERVICES = {
         {"netflix", "netflix", "com.netflix.ninja"},
@@ -161,7 +163,7 @@ final class Recs {
     String error() { return error; }
 
     static String periodLabel() {
-        return (Ui.ru ? PERIOD_LABEL_RU : Ui.es ? PERIOD_LABEL_ES : Ui.de ? PERIOD_LABEL_DE : Ui.fr ? PERIOD_LABEL_FR : Ui.en ? PERIOD_LABEL_EN : PERIOD_LABEL)
+        return (Ui.ru ? PERIOD_LABEL_RU : Ui.es ? PERIOD_LABEL_ES : Ui.de ? PERIOD_LABEL_DE : Ui.fr ? PERIOD_LABEL_FR : Ui.tur ? PERIOD_LABEL_TR : Ui.en ? PERIOD_LABEL_EN : PERIOD_LABEL)
                 [period(System.currentTimeMillis())];
     }
 
@@ -417,6 +419,13 @@ final class Recs {
         List<Pick> newMovies = new ArrayList<>(), newShows = new ArrayList<>();
         for (int i = 0; i < movies.length(); i++) add(newMovies, movies.getJSONObject(i), "movie");
         for (int i = 0; i < shows.length(); i++) add(newShows, shows.getJSONObject(i), "tv");
+        // Titles in the TV's language first in each group (a stable sort keeps TMDB's order among them): a row of
+        // originals in other scripts reads like an error. In English almost everything already has its title.
+        if (!Ui.en) {
+            for (List<Pick> group : java.util.Arrays.asList(hotMovies, hotShows, newMovies, newShows)) {
+                group.sort((a, b) -> Boolean.compare(b.localized, a.localized));
+            }
+        }
         // Trending first, then the new releases; movies and shows alternating, without repeats, up to 24.
         List<Pick> list = new ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();
@@ -435,6 +444,7 @@ final class Recs {
         if (Ui.es) return "ES".equals(java.util.Locale.getDefault().getCountry()) ? "es-ES" : "es-MX";
         if (Ui.de) return "de-DE";   // TMDB's de-AT and de-CH have few translations of their own
         if (Ui.fr) return "fr-FR";
+        if (Ui.tur) return "tr-TR";
         return Ui.en ? "en-US" : "pt-BR";
     }
 
@@ -458,8 +468,10 @@ final class Recs {
         Pick p = new Pick();
         p.id = o.optInt("id");
         p.kind = kind;
-        p.title = o.optString(kind.equals("movie") ? "title" : "name");
+        String field = kind.equals("movie") ? "title" : "name";
+        p.title = o.optString(field);
         p.backdrop = backdrop;
+        p.localized = localized(p.title, o, field);
         list.add(p);
     }
 
@@ -480,6 +492,7 @@ final class Recs {
         if (p.kind.equals("movie")) {
             int minutes = o.optInt("runtime");
             if (minutes > 0 && Ui.ru) parts.add(minutes >= 60 ? (minutes / 60) + " ч " + (minutes % 60) + " мин" : minutes + " мин");
+            else if (minutes > 0 && Ui.tur) parts.add(minutes >= 60 ? (minutes / 60) + " sa " + (minutes % 60) + " dk" : minutes + " dk");
             else if (minutes > 0 && Ui.en) parts.add(minutes >= 60 ? (minutes / 60) + "h " + (minutes % 60) + "m" : minutes + "m");
             else if (minutes > 0) parts.add(minutes >= 60 ? (minutes / 60) + " h " + (minutes % 60) + " min" : minutes + " min");
         } else {
@@ -488,6 +501,7 @@ final class Recs {
             else if (seasons > 0 && Ui.en) parts.add(seasons == 1 ? "1 season" : seasons + " seasons");
             else if (seasons > 0 && Ui.de) parts.add(seasons == 1 ? "1 Staffel" : seasons + " Staffeln");
             else if (seasons > 0 && Ui.fr) parts.add(seasons == 1 ? "1 saison" : seasons + " saisons");
+            else if (seasons > 0 && Ui.tur) parts.add(seasons + " sezon");
             else if (seasons > 0) parts.add(seasons == 1 ? "1 temporada" : seasons + " temporadas");
         }
         JSONObject wp = o.optJSONObject("watch/providers");
@@ -507,16 +521,39 @@ final class Recs {
         p.detailed = true;
     }
 
+    /** A title reads in the TV's language when it is the work's own language or TMDB has a translation of it. */
+    private static boolean localized(String title, JSONObject o, String field) {
+        return Ui.language.equals(o.optString("original_language")) || !title.equalsIgnoreCase(o.optString("original_" + field));
+    }
+
     /**
      * Without a title in the TV's language TMDB answers with the original one, so a Korean series on a German TV reads
-     * "닥터X: 하얀 마피아의 시대". Then the English title, when TMDB has one (one more request, only for those).
+     * "닥터X: 하얀 마피아의 시대". TMDB only looks at the exact region (pt-BR, es-MX, tr-TR), so first a title from
+     * another region of the same language (pt-PT, es-ES), then the English one, when TMDB has them (one or two more
+     * requests, only for those titles). Sets `p.localized`: the English title doesn't count.
      */
     private String title(Pick p, JSONObject o) {
         String field = p.kind.equals("movie") ? "title" : "name";
         String own = o.optString(field, p.title);
         String original = o.optString("original_language");
-        if (Ui.en || own.isEmpty() || !own.equals(o.optString("original_" + field))
-                || Ui.language.equals(original) || "en".equals(original)) return own;
+        p.localized = !own.isEmpty() && localized(own, o, field);
+        if (Ui.en || own.isEmpty() || p.localized) return own;
+        try {
+            JSONArray all = get("/" + p.kind + "/" + p.id + "/translations").optJSONArray("translations");
+            for (int i = 0; all != null && i < all.length(); i++) {
+                JSONObject t = all.optJSONObject(i);
+                if (t == null || !Ui.language.equals(t.optString("iso_639_1"))) continue;
+                JSONObject data = t.optJSONObject("data");
+                String same = data == null ? "" : data.optString(field).trim();
+                if (!same.isEmpty()) {
+                    p.localized = true;
+                    return same;
+                }
+            }
+        } catch (Exception ignored) {
+            // no translations: on to the English title
+        }
+        if ("en".equals(original)) return own;
         try {
             String english = get("/" + p.kind + "/" + p.id + "?language=en-US").optString(field);
             return english.isEmpty() ? own : english;
@@ -544,6 +581,7 @@ final class Recs {
     private static String genre(String name) {
         if (Ui.ru) return Russian.text(name);
         if (Ui.fr) return French.text(name);
+        if (Ui.tur) return Turkish.text(name);
         for (String[] g : Ui.es ? GENRES_ES : Ui.de ? GENRES_DE : GENRES_PT) if (g[0].equalsIgnoreCase(name)) return g[1];
         return name;
     }
