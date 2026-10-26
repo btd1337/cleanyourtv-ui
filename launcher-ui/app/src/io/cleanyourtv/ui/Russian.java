@@ -171,6 +171,12 @@ final class Russian {
                 return "Сети Wi-Fi сохранены приложением первоначальной настройки телевизора. Его отключение удалит эти сети. "
                         + "В разделе «Настройки → Сеть и Интернет» забудьте сеть и подключитесь заново, затем повторите попытку. "
                         + "Недоступные сети там не отображаются: Claude Code может удалить их с компьютера.";
+            // Screensaver style and clock format
+            case "Picks": return "Подборка";
+            case "Clock and aurora": return "Часы и сияние";
+            case "Clock format": return "Формат времени";
+            case "24-hour": return "24 часа";
+            case "12-hour": return "12 часов";
             default:
                 // Notices are saved in the language in use when they were generated.
                 String[] prefixes = {"Couldn't check Free My TV: ", "Couldn't turn on Free My TV: ",

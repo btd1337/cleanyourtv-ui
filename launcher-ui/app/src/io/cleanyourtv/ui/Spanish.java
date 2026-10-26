@@ -120,6 +120,12 @@ final class Spanish {
             case "Disney and Globoplay: the TV itself controls those buttons.": return "Disney y Globoplay: el propio TV controla esos botones.";
             case "YouTube, Prime Video and Google Play: the TV itself controls those buttons.": return "YouTube, Prime Video y Google Play: el propio TV controla esos botones.";
             case "These are the TCL remote's buttons: on this TV, the buttons work as they always did.": return "Estos son los botones del control de TCL: en este TV, los botones funcionan como siempre.";
+            // Screensaver style and clock format
+            case "Picks": return "Destacados";
+            case "Clock and aurora": return "Reloj y aurora";
+            case "Clock format": return "Formato del reloj";
+            case "24-hour": return "24 horas";
+            case "12-hour": return "12 horas";
             default:
                 if (english.startsWith("Free My TV is on: new home screen and screensaver, ")) {
                     return "Free My TV está activo: nueva pantalla de inicio y protector, "

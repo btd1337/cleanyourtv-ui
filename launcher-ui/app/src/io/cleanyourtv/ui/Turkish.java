@@ -452,6 +452,11 @@ final class Turkish {
             case "unexpected reply from ADB": return "ADB'den beklenmeyen yanıt";
             case "” from the menu?": return "” menüden kaldırılsın mı?";
             case "”? It comes back in Settings.": return "” gizlensin mi? Ayarlar'dan geri getirebilirsiniz.";
+            // Screensaver style and clock format
+            case "Picks": return "Öneriler";
+            case "Clock and aurora": return "Saat ve aurora";
+            case "24-hour": return "24 saat";
+            case "12-hour": return "12 saat";
             default:
                 if (english.startsWith("No. ") && english.endsWith(" in shows today")) {
                     return "Bugün dizilerde " + english.substring(4, english.length() - 15) + ". sırada";

@@ -175,16 +175,21 @@ final class Ui {
         return "de".equals(tv.getLanguage()) ? tv : Locale.GERMANY;
     }
 
-    /** "21:47" (in English, "9:47", like the iPhone in the US). */
-    static String clock(long now) {
-        return en ? new SimpleDateFormat("h:mm", Locale.US).format(new Date(now))
-                : new SimpleDateFormat("HH:mm", locale()).format(new Date(now));
+    /** A 12-hour clock: in English, unless Home Settings > Clock format picks one. */
+    static boolean twelveHour() {
+        String f = Prefs.clockFormat();
+        return f.equals("12h") || f.equals("auto") && en;
     }
 
-    /** "5:21" (sunrise and sunset; in English, "5:21 AM"). */
+    /** "21:47" (12-hour, "9:47", like the iPhone in the US). */
+    static String clock(long now) {
+        return new SimpleDateFormat(twelveHour() ? "h:mm" : "HH:mm", locale()).format(new Date(now));
+    }
+
+    /** "5:21" (sunrise and sunset; 12-hour, "5:21 AM"). */
     static String time(long at) {
-        return once("time", at, () -> en ? new SimpleDateFormat("h:mm a", Locale.US).format(new Date(at))
-                : new SimpleDateFormat("H:mm", locale()).format(new Date(at)));
+        boolean twelve = twelveHour();
+        return once(twelve ? "time12" : "time24", at, () -> new SimpleDateFormat(twelve ? "h:mm a" : "H:mm", locale()).format(new Date(at)));
     }
 
     private static final HashMap<String, String> FORMATTED = new HashMap<>();
