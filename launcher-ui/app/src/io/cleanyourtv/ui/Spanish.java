@@ -126,6 +126,7 @@ final class Spanish {
             case "Clock format": return "Formato del reloj";
             case "24-hour": return "24 horas";
             case "12-hour": return "12 horas";
+            case "Wi-Fi & Network": return "Wi-Fi y red";
             default:
                 if (english.startsWith("Free My TV is on: new home screen and screensaver, ")) {
                     return "Free My TV está activo: nueva pantalla de inicio y protector, "

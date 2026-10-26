@@ -357,6 +357,7 @@ final class French {
             case "Clock format": return "Format de l'heure";
             case "24-hour": return "24 heures";
             case "12-hour": return "12 heures";
+            case "Wi-Fi & Network": return "Wi-Fi et réseau";
             default:
                 // Notices are saved in the language in use when they were generated.
                 for (String p : new String[] {"Couldn't check Free My TV: ", "Couldn't turn on Free My TV: ",

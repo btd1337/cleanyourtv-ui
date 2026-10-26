@@ -177,6 +177,7 @@ final class Russian {
             case "Clock format": return "Формат времени";
             case "24-hour": return "24 часа";
             case "12-hour": return "12 часов";
+            case "Wi-Fi & Network": return "Wi-Fi и сеть";
             default:
                 // Notices are saved in the language in use when they were generated.
                 String[] prefixes = {"Couldn't check Free My TV: ", "Couldn't turn on Free My TV: ",

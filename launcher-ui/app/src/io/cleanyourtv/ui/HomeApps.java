@@ -57,6 +57,8 @@ final class HomeApps {
     static final int APP = 0, LIVE_TV = 1, INPUT = 2, ALL_APPS = 3, SETTINGS = 4, ANDROID_SETTINGS = 5;
     /** The "HDMI Inputs" button: opens the bottom drawer on the inputs (the home screen handles it). */
     static final int INPUTS = 7, EXPLORE = 8;
+    /** The TV's own network screen (Wi-Fi and Ethernet), from the bottom drawer. */
+    static final int NETWORK = 9;
     /** Image size of each card (16:9; on screen it shows up to ~330 px wide). */
     static final int TILE_W = 384, TILE_H = 216;
 
@@ -224,6 +226,7 @@ final class HomeApps {
     static List<Item> drawerShortcuts() {
         List<Item> items = new ArrayList<>();
         items.add(shortcut(ALL_APPS, "all", Ui.tr("Todos os Apps", "All Apps"), "apps"));
+        items.add(shortcut(NETWORK, "network", Ui.tr("Wi-Fi e Rede", "Wi-Fi & Network"), "wifi"));
         items.add(shortcut(SETTINGS, "settings", Ui.tr("Ajustes do Início", "Home Settings"), "settings"));
         items.add(shortcut(ANDROID_SETTINGS, "tv-settings", Ui.tr("Ajustes da TV", "TV Settings"), "tv_settings"));
         return items;
@@ -417,6 +420,9 @@ final class HomeApps {
             case ANDROID_SETTINGS:
                 intent = new Intent(Settings.ACTION_SETTINGS);
                 break;
+            case NETWORK:
+                intent = networkSettings(a);
+                break;
             case EXPLORE:
                 intent = new Intent().setComponent(new ComponentName(a, ExploreActivity.class));
                 break;
@@ -432,6 +438,16 @@ final class HomeApps {
             AppLog.w("couldn't open " + it.label + ": " + e.getMessage());
             return false;
         }
+    }
+
+    /** Android TV's network screen when the TV has it, else Android's Wi-Fi settings, else the settings. */
+    static Intent networkSettings(Context c) {
+        PackageManager pm = c.getPackageManager();
+        Intent tv = new Intent().setComponent(new ComponentName("com.android.tv.settings",
+                "com.android.tv.settings.connectivity.NetworkActivity"));
+        if (tv.resolveActivity(pm) != null) return tv;
+        Intent wifi = new Intent(Settings.ACTION_WIFI_SETTINGS);
+        return wifi.resolveActivity(pm) != null ? wifi : new Intent(Settings.ACTION_SETTINGS);
     }
 
     /**
