@@ -32,6 +32,7 @@ public class HomeActivity extends Activity {
             return;
         }
         if (home != null) home.resume();
+        Images.trimSoon();   // Explore's caches, if it was open: Home doesn't use them
     }
 
     @Override protected void onPause() {

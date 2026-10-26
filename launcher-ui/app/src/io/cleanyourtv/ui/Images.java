@@ -50,6 +50,7 @@ final class Images {
 
     /** Shows the image in the view once it arrives; a view reused for another image in the meantime is left alone. */
     static void load(ImageView view, String url) {
+        MAIN.removeCallbacks(TRIM_LATER);   // a page with pictures is back: keep the cache
         if (dir == null) init(view.getContext());
         view.setTag(url);
         if (url == null || url.isEmpty()) {
@@ -147,4 +148,18 @@ final class Images {
     }
 
     static void trim() { CACHE.evictAll(); }
+
+    private static final Runnable TRIM_LATER = () -> {
+        trim();
+        Tmdb.trimMemory();
+    };
+
+    /**
+     * Back on Home, which shares Explore's process (so no UI_HIDDEN trim comes): Explore's posters and TMDB answers go
+     * after a minute there, unless a page loads pictures again first. Both stay on disk for the next visit.
+     */
+    static void trimSoon() {
+        MAIN.removeCallbacks(TRIM_LATER);
+        MAIN.postDelayed(TRIM_LATER, 60_000L);
+    }
 }
