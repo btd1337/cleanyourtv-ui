@@ -140,9 +140,9 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private int tab, topIndex, cardIndex;
     private int widgetIndex;    // with TalkBack on, the drawer's weather (0) or quotes (1) card can take the focus
     private List<Recs.Pick> cards = new ArrayList<>();
-    // The cards page through the tab's picks three at a time: ← → past the last card turn the page.
+    // The cards page through the tab's picks three at a time, round and round: → past the last card turns the page,
+    // and the last page leads back to the first. Only full pages: the leftover picks of a last, short page are skipped.
     private int page, pages = 1;
-    private String pageText = "";
     private final Spring[] topFocus = new Spring[6];
     private final RectF[] topRects = new RectF[6];
     private final Spring[] cardFocus = new Spring[3];
@@ -2668,9 +2668,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     /** The three cards of the current tab's page (Explore, Movies, Shows) and the background from the first one. */
     private void updateCards() {
         List<Recs.Pick> all = recs.all(TAB_KIND[tab]);
-        pages = Math.max(1, (all.size() + 2) / 3);
+        pages = Math.max(1, all.size() / 3);
         page = Math.min(page, pages - 1);
-        pageText = pages > 1 ? (page + 1) + " / " + pages : "";
         List<Recs.Pick> list = new ArrayList<>(all.subList(Math.min(all.size(), page * 3), Math.min(all.size(), page * 3 + 3)));
         if (!samePicks(list, cards)) {
             cards = list;
@@ -2777,26 +2776,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         for (int i = 0; i < 3; i++) if (cardFocus[i].value > 0.02f && (top < 0 || cardFocus[i].value > cardFocus[top].value)) top = i;
         for (int i = 0; i < 3; i++) if (i != top) drawLightCard(c, i);
         if (top >= 0) drawLightCard(c, top);
-        drawPages(c);
         if (HomeData.coinCount() > 0) drawQuotes(c);
-    }
-
-    /** "2 / 8" after the tabs, and with the focus on the cards, a chevron on each side that has another page. */
-    private void drawPages(Canvas c) {
-        if (pages <= 1 || cards.isEmpty()) return;
-        RectF last = topRects[2];
-        c.drawText(pageText, last.right + 28 * k, last.centerY() + Ui.halfCap(lTab), lTab);
-        if (zone != Z_CARDS) return;
-        int ink = tone(0x991C1C1E, 0x99FFFFFF);
-        float cy = cardRects[0].centerY(), size = 34 * k;
-        if (page + 1 < pages) Symbols.draw(getContext(), c, "chevron_right", (CONTENT_R + MARGIN / 2) * k, cy, size, ink);
-        if (page > 0) {
-            float x = MARGIN / 2 * k;
-            c.save();
-            c.scale(-1, 1, x, 0);
-            Symbols.draw(getContext(), c, "chevron_right", x, cy, size, ink);
-            c.restore();
-        }
     }
 
     private boolean picksOn() {
@@ -2941,12 +2921,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
                 }
                 break;
             case Z_CARDS:
-                if (dx > 0 && cardIndex == cards.size() - 1 && page + 1 < pages) {
-                    page++;
+                if (dx > 0 && cardIndex == cards.size() - 1 && pages > 1) {
+                    page = (page + 1) % pages;
                     updateCards();
                     cardIndex = 0;
-                } else if (dx < 0 && cardIndex == 0 && page > 0) {
-                    page--;
+                } else if (dx < 0 && cardIndex == 0 && pages > 1) {
+                    page = (page + pages - 1) % pages;
                     updateCards();
                     cardIndex = cards.size() - 1;
                 } else if (dx != 0) {
