@@ -25,6 +25,11 @@ final class Backdrop {
     static final int W = 1920, H = 1080, FW = 192, FH = 108, GW = 480, GH = 270;
     /** The cards at their focused size (1.05×): the wide one and the two tall ones. */
     static final int WIDE_W = 1092, WIDE_H = 464, TALL_W = 336, TALL_H = 464;
+    /**
+     * Liquid Glass needs AGSL (Android 13+). Before that Scene draws the flat look and never reads the glass pixels, so
+     * they aren't built: about 1 MB of Java heap per pick, 9 picks loaded while Home shows.
+     */
+    static final boolean GLASS = android.os.Build.VERSION.SDK_INT >= 33;
     final Bitmap image;
     final int[] frost;      // heavily blurred (frosted glass, bottom drawer)
     final int[] glass;      // lightly blurred (Liquid Glass: the photo shows through the glass)
@@ -62,10 +67,10 @@ final class Backdrop {
             Bitmap wide = card(out, WIDE_W, WIDE_H), tall = card(out, TALL_W, TALL_H);
             int[] frost = reduce(out, FW, FH, 3, 3);
             int[] light = whiten(frost.clone(), 0.82f);
-            int[] glass = reduce(out, GW, GH, 2, 2);
-            int[] lightGlass = whiten(glass.clone(), 0.74f);
+            int[] glass = GLASS ? reduce(out, GW, GH, 2, 2) : null;
+            int[] lightGlass = glass == null ? null : whiten(glass.clone(), 0.74f);
             int[] night = darken(frost.clone(), 0.76f);
-            int[] nightGlass = darken(glass, 0.56f);
+            int[] nightGlass = glass == null ? null : darken(glass, 0.56f);
             out.recycle();
             return new Backdrop(null, frost, null, wide, tall, light, lightGlass, night, nightGlass);
         }
@@ -93,7 +98,7 @@ final class Backdrop {
         c.drawRect(0, 0, W, H * 0.24f, scrim);
 
         int[] frost = reduce(out, FW, FH, 3, 3);
-        int[] glass = reduce(out, GW, GH, 2, 2);
+        int[] glass = GLASS ? reduce(out, GW, GH, 2, 2) : null;
         return new Backdrop(gpu(out), frost, glass, null, null, null, null, null, null);
     }
 

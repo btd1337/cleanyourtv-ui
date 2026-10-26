@@ -126,9 +126,9 @@ final class Scene {
     /** Photo transition: both photos in the glass, blended by setGlassMix (0 = the first one). */
     void setGlassImages(int[] from, int[] to) {
         imageGlass = true;
+        if (liquid == null) return;   // flat look: nothing reads the glass, no textures for it
         glassA = fill(glassA, from);
         if (to != null) glassB = fill(glassB, to);
-        if (liquid == null) return;
         glassShaderA = linear(glassA);
         liquid.setInputShader("imageA", glassShaderA);
         liquid.setInputShader("imageB", to != null ? linear(glassB) : glassShaderA);

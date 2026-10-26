@@ -130,8 +130,8 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private boolean nightTarget;
     private float night, nightFrom;     // 0 = day, 1 = night
     private long nightAt;
-    private final int[] glassNight = new int[Backdrop.GW * Backdrop.GH], frostNight = new int[Backdrop.FW * Backdrop.FH];
-    private final int[] neutralGlassPx = new int[Backdrop.GW * Backdrop.GH], neutralFrostPx = new int[Backdrop.FW * Backdrop.FH];
+    private final int[] frostNight = new int[Backdrop.FW * Backdrop.FH], neutralFrostPx = new int[Backdrop.FW * Backdrop.FH];
+    private int[] glassNight, neutralGlassPx;   // only with Liquid Glass (Backdrop.GLASS): made on first use
     private boolean nightPair;          // the glass holds both photos (day and night), blended by `night`
     private Shader nightGradient;
 
@@ -823,11 +823,15 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         bgTo = b;
         bgFadeAt = up;
         nightPair = false;
-        if (b == null || glassOf(b) == null) return;
-        if (bgFrom == null || glassOf(bgFrom) == null) {
+        // The frost (drawer, toasts) on every Android; the glass only where Liquid Glass exists (Backdrop.GLASS).
+        // TODO: the dark design (no lightGlass) now takes this path too, on every Android: its frost follows the photo
+        // from the fade's start and crossfades with the drawer open, and tickBackgroundFade calls setGlassMix. Not yet
+        // checked on Android 13+.
+        if (b == null || b.frost == null) return;
+        if (bgFrom == null || bgFrom.frost == null) {
             scene.setFrost(frostOf(b));
-            scene.setGlassImage(glassOf(b));
-        } else {
+            if (glassOf(b) != null) scene.setGlassImage(glassOf(b));
+        } else if (glassOf(bgFrom) != null && glassOf(b) != null) {
             scene.setGlassImages(glassOf(bgFrom), glassOf(b));
         }
     }
@@ -838,6 +842,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
         if (night >= 0.999f) return b.nightGlass;
         // During the transition, the blend (only for the current background; a photo fading in uses the nearer side).
         if (b != bgTo) return night < 0.5f ? b.lightGlass : b.nightGlass;
+        if (glassNight == null) glassNight = new int[Backdrop.GW * Backdrop.GH];
         for (int i = 0; i < glassNight.length; i++) glassNight[i] = mix(b.lightGlass[i], b.nightGlass[i], night);
         return glassNight;
     }
@@ -846,9 +851,12 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private void neutralGlass() {
         int color = blend(0xFFEBEBF0, 0xFF141416, night);
         java.util.Arrays.fill(neutralFrostPx, color);
-        java.util.Arrays.fill(neutralGlassPx, color);
         scene.setFrost(neutralFrostPx);
-        scene.setGlassImage(neutralGlassPx);
+        if (Backdrop.GLASS) {
+            if (neutralGlassPx == null) neutralGlassPx = new int[Backdrop.GW * Backdrop.GH];
+            java.util.Arrays.fill(neutralGlassPx, color);
+            scene.setGlassImage(neutralGlassPx);
+        }
         nightPair = false;
     }
 
@@ -893,9 +901,11 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
 
     /** Redraws for the current night value (the glass now reads the lightened, blended or darkened photo). */
     private void nightChanged() {
-        if (bgFadeAt == 0 && bgTo != null && bgTo.lightGlass != null) {
+        if (bgFadeAt == 0 && bgTo != null && bgTo.frost != null) {
             scene.setFrost(frostOf(bgTo));
-            if (nightAt != 0 && bgTo.nightGlass != null) {
+            if (bgTo.lightGlass == null) {
+                nightPair = false;
+            } else if (nightAt != 0 && bgTo.nightGlass != null) {
                 if (!nightPair) {
                     scene.setGlassImages(bgTo.lightGlass, bgTo.nightGlass);
                     nightPair = true;
@@ -946,7 +956,7 @@ final class HomeView extends ViewGroup implements Choreographer.FrameCallback, H
     private boolean tickBackgroundFade(long up) {
         if (bgFadeAt == 0) return false;
         float e = fadeEase(bgFadeAt, up);
-        if (bgTo != null && bgFrom != null && glassOf(bgFrom) != null && glassOf(bgTo) != null) {
+        if (bgTo != null && bgFrom != null && bgFrom.frost != null && bgTo.frost != null) {
             if (drawerLayer.getVisibility() == VISIBLE || toast != null) {
                 int[] from = frostOf(bgFrom), to = frostOf(bgTo);
                 for (int i = 0; i < frostMix.length; i++) frostMix[i] = mix(from[i], to[i], e);
