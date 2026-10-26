@@ -108,8 +108,10 @@ final class Recs {
     private final ExecutorService io = Executors.newSingleThreadExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
     private final List<Listener> listeners = new ArrayList<>();
-    private final Map<String, Backdrop> images = new LinkedHashMap<>();   // this hour's, built and ready to draw
+    // This hour's, built and ready to draw, in the order they were last drawn: the one unused longest goes first.
+    private final Map<String, Backdrop> images = new LinkedHashMap<>(16, 0.75f, true);
     private final java.util.Set<String> pending = new java.util.HashSet<>();
+    private final java.util.Set<String> asked = new java.util.HashSet<>();   // details(): once per pick and list
     private volatile List<Pick> picks = new ArrayList<>();
     private volatile int period = -1;
     private volatile long listAt;
@@ -181,6 +183,15 @@ final class Recs {
 
     /** This hour's 3, movies only ("movie") or shows only ("tv"); null = both (the home screen tabs). */
     List<Pick> now(String kind) {
+        List<Pick> all = all(kind);
+        return all.size() > 3 ? new ArrayList<>(all.subList(0, 3)) : all;
+    }
+
+    /**
+     * Every pick for a home screen tab, starting with this hour's three: the cards page through them three at a time.
+     * The same rotation as before, carried on to the end of the list.
+     */
+    List<Pick> all(String kind) {
         List<Pick> list = new ArrayList<>();
         if (!hasKey(context)) return list;    // no TMDB key: no recommendations
         Map<String, Boolean> have = new HashMap<>();   // one look per app, not per title (this runs every 15 s)
@@ -190,10 +201,10 @@ final class Recs {
         }
         if (list.isEmpty()) return list;
         long hour = System.currentTimeMillis() / 3600_000L;
-        // Three per hour, never two from the same franchise ("Law & Order" and "Law & Order: Special…").
+        // Three new ones per hour first, never two from the same franchise ("Law & Order" and "Law & Order: Special…").
         List<Pick> out = new ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();
-        for (int i = 0; i < list.size() && out.size() < 3; i++) {
+        for (int i = 0; i < list.size(); i++) {
             Pick p = list.get((int) ((hour * 3 + i) % list.size()));
             if (seen.add(franchise(p.title))) out.add(p);
         }
@@ -358,6 +369,33 @@ final class Recs {
         });
     }
 
+    /**
+     * Genre, runtime and service for picks shown past the first page, which the refresh doesn't fetch (it only
+     * prepares this hour's three of each tab). In the background, once; the cards redraw when they arrive.
+     */
+    void details(List<Pick> shown) {
+        final List<Pick> todo = new ArrayList<>();
+        synchronized (asked) {
+            for (Pick p : shown) if (!p.detailed && asked.add(key(p))) todo.add(p);
+        }
+        if (todo.isEmpty() || !hasKey(context)) return;
+        io.execute(() -> {
+            boolean changed = false;
+            for (Pick p : todo) {
+                if (p.detailed) continue;
+                try {
+                    fetchDetails(p);
+                    changed = true;
+                } catch (Exception e) {
+                    AppLog.w("recommendation details: " + e.getMessage());
+                }
+            }
+            if (!changed) return;
+            save();
+            notifyListeners();
+        });
+    }
+
     /** This hour's picks for the three tabs (Explore, Movies, Shows), without repeats. */
     List<Pick> wanted() {
         List<Pick> out = new ArrayList<>();
@@ -432,6 +470,9 @@ final class Recs {
         alternate(list, seen, hotMovies, hotShows, 24);
         alternate(list, seen, newMovies, newShows, 24);
         if (list.isEmpty()) throw new IOException("TMDB returned no recommendations");
+        synchronized (asked) {
+            asked.clear();
+        }
         picks = list;
         period = p;
         listAt = System.currentTimeMillis();
