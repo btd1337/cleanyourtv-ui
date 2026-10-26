@@ -296,11 +296,20 @@ final class HomeApps {
                 custom = info.loadCustomLabel(c);
             } catch (RuntimeException ignored) {
             }
+            // Philips saves a renamed input as "name&TYPE", the type being the device picked from its list
+            // ("PS5&GAME_CONSOLE"): the name is shown, and the type picks the icon when the name says nothing.
+            String type = "";
+            Matcher philips = custom == null ? null : PHILIPS_LABEL.matcher(custom);
+            if (philips != null && philips.matches()) {
+                custom = philips.group(1);
+                type = philips.group(2);
+            }
             String reported = devices.containsKey(info.getId()) ? devices.get(info.getId()) : "";
             String label = custom != null && custom.length() > 0 ? custom.toString()
                     : !reported.isEmpty() && state == TvInputManager.INPUT_STATE_CONNECTED ? reported : "HDMI " + number;
             String symbol = state == TvInputManager.INPUT_STATE_CONNECTED || custom != null
                     ? deviceSymbol(label) : "hdmi";
+            if (symbol.equals("hdmi") && !type.isEmpty()) symbol = typeSymbol(type);
             Item it = shortcut(INPUT, "hdmi" + number, label, symbol);
             it.inputId = info.getId();
             it.number = String.valueOf(number);
@@ -324,6 +333,28 @@ final class HomeApps {
         String n = name == null ? "" : name.toLowerCase(Locale.ROOT);
         for (String[] group : DEVICE_WORDS) {
             for (int i = 1; i < group.length; i++) if (n.contains(group[i])) return group[0];
+        }
+        return "hdmi";
+    }
+
+    /** A Philips custom label: the name, then "&" and the device type in capitals ("Switch &GAME_CONSOLE"). */
+    private static final Pattern PHILIPS_LABEL = Pattern.compile("(.*\\S)\\s*&([A-Z][A-Z0-9_]*)");
+
+    /**
+     * Words in a Philips device type, by the icon they pick (GAME_CONSOLE, HOME_THEATRE_SYSTEM, SATELLITE_RECEIVER...).
+     * Disc players, computers and cameras have no icon of their own: the HDMI plug.
+     */
+    private static final String[][] TYPE_WORDS = {
+        {"gamepad", "GAME", "CONSOLE"},
+        {"speaker", "AUDIO", "SOUND", "THEATRE", "THEATER", "SPEAKER"},
+        {"play", "STREAM", "STREAMING", "MEDIA"},
+        {"tv", "RECEIVER", "SATELLITE", "DECODER", "TUNER", "CABLE", "RECORDER", "STB"},
+    };
+
+    static String typeSymbol(String type) {
+        List<String> words = java.util.Arrays.asList(type.split("_"));
+        for (String[] group : TYPE_WORDS) {
+            for (int i = 1; i < group.length; i++) if (words.contains(group[i])) return group[0];
         }
         return "hdmi";
     }
