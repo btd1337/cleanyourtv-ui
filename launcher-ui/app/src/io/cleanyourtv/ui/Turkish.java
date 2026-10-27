@@ -142,7 +142,7 @@ final class Turkish {
             case "Weather widget": return "Hava Durumu Bileşeni";
             case ". High ": return ". En yüksek ";
             case ", low ": return ", En düşük ";
-            case " Next hours: ": return " Gelecek saatler: ";
+            case " Next hours: ": return " Önümüzdeki saatler: ";
             case " Sunrise ": return " Gün doğumu ";
             case " Sunset ": return " Gün batımı ";
             case "City": return "Şehir";
@@ -189,7 +189,7 @@ final class Turkish {
             case "Romance": return "Romantik";
             case "Thriller": return "Gerilim";
             case "Horror": return "Korku";
-            case "Soaps": return "Pembe Dizi";
+            case "Soaps": return "Pembe Diziler";
             case "K-dramas": return "Kore Dizileri";
             case "Brazilian": return "Brezilya Yapımları";
             case "Picked for you": return "Sizin için seçildi";
@@ -245,7 +245,7 @@ final class Turkish {
             case "Nothing here yet. Open a title to add it.": return "Henüz içerik yok. Eklemek için bir içeriği açın.";
             case "1 title": return "1 içerik";
             case " titles": return " içerik";
-            case "Where to watch": return "Nerede izlenir";
+            case "Where to watch": return "Nerede İzlenir?";
             case "Watch on ": return "Şurada izle: ";
             case "Included": return "Aboneliğe dahil";
             case "Rent": return "Kirala";
@@ -386,16 +386,16 @@ final class Turkish {
             case "No app on the TV": return "TV'de uygulama yok";
             case "No biography on TMDB.": return "TMDB'de biyografi yok.";
             case "No configurable buttons: push your model's remote.json (launcher-ui/config.sh --remote).": return "Ayarlanabilir tuş yok: modelinizin remote.json dosyasını gönderin (launcher-ui/config.sh --remote).";
-            case "Not on any streaming service in the region right now.": return "Şu anda bölgedeki hiçbir yayın platformunda yok.";
+            case "Not on any streaming service in the region right now.": return "Şu anda bölgenizdeki hiçbir dijital platformda yer almıyor.";
             case "Nothing found.": return "Hiçbir şey bulunamadı.";
             case "OK adds or removes · ← → change the order": return "OK ekler veya kaldırır · ← → sırayı değiştirir";
             case "OK picks what the button does. The rest work as always.": return "OK, tuşun ne yapacağını seçer. Diğerleri her zamanki gibi çalışır.";
             case "On · ": return "Açık · ";
             case "Partly Cloudy": return "Parçalı bulutlu";
-            case "Pick categories and year in the filter; save it to the menu": return "Filtrede kategorileri ve yılı seçin; menüye kaydedin";
-            case "Pick something in the filter first.": return "Önce filtrede bir şey seçin.";
+            case "Pick categories and year in the filter; save it to the menu": return "Filtreden kategori ve yıl seçin, menüye kaydedin";
+            case "Pick something in the filter first.": return "Önce filtreden bir seçim yapın.";
             case "Pick the app that opens each service. Picks and Explore only use services with an app, unless you show them all.": return "Her platformu açacak uygulamayı seçin. Öneriler ve Keşfet, hepsini göstermediğiniz sürece yalnızca uygulaması olan platformları kullanır.";
-            case "Point your phone's camera, sign in to TMDB and tap Approve.": return "Telefonunuzun kamerasını koda tutun, TMDB'ye giriş yapın ve Approve'a dokunun.";
+            case "Point your phone's camera, sign in to TMDB and tap Approve.": return "Telefonunuzun kamerasını QR koda tutun, TMDB'ye giriş yapın ve Onayla'ya (Approve) dokunun.";
             case "Production": return "Yapım";
             case "Rain": return "Yağmur";
             case "Remove": return "Kaldır";
@@ -403,7 +403,7 @@ final class Turkish {
             case "Remove “": return "“";
             case "Saved to the menu": return "Menüye kaydedildi";
             case "Sci-Fi & Fantasy": return "Bilim Kurgu & Fantastik";
-            case "Search, Home and My list always stay on top. OK on an item: move, hide or remove.": return "Ara, Ana Sayfa ve Listem her zaman üstte kalır. Bir öğede OK: taşı, gizle veya kaldır.";
+            case "Search, Home and My list always stay on top. OK on an item: move, hide or remove.": return "Ara, Ana Sayfa ve Listem her zaman en üstte kalır. Öğe üzerinde OK: taşı, gizle veya kaldır.";
             case "Season ": return "Sezon ";
             case "Service": return "Platform";
             case "Services": return "Platformlar";
@@ -415,16 +415,16 @@ final class Turkish {
             case "Soap": return "Pembe dizi";
             case "Specials": return "Özel bölümler";
             case "Subscription": return "Abonelik";
-            case "THIS AFTERNOON": return "BU ÖĞLEDEN SONRA";
+            case "THIS AFTERNOON": return "ÖĞLEDEN SONRA";
             case "THIS MORNING": return "BU SABAH";
             case "TMDB account connected": return "TMDB hesabı bağlandı";
             case "TMDB account: ": return "TMDB hesabı: ";
             case "TONIGHT": return "BU AKŞAM";
             case "TV settings": return "TV ayarları";
             case "Tagged “": return "Etiket: “";
-            case "Talk": return "Sohbet programı";
+            case "Talk": return "Talk Show";
             case "The ": return "";
-            case "The TV's own": return "TV'ninki";
+            case "The TV's own": return "TV Varsayılanı";
             case "The link expired. Go back and open it again.": return "Bağlantının süresi doldu. Geri dönüp yeniden açın.";
             case "These are the TCL remote's buttons: on this TV, the buttons work as they always did.": return "Bunlar TCL kumandasının tuşları: bu TV'de tuşlar her zamanki gibi çalışır.";
             case "This TV can't open the app's settings.": return "Bu TV uygulamanın ayarlarını açamıyor.";
@@ -446,7 +446,7 @@ final class Turkish {
             case "opens ": return "uygulama: ";
             case "opens the title in ": return "içerik şurada açılır: ";
             case "s": return "";
-            case "the TV asked for TLS (wireless debugging); use USB debugging": return "TV TLS istedi (kablosuz hata ayıklama); USB hata ayıklamayı kullanın";
+            case "the TV asked for TLS (wireless debugging); use USB debugging": return "TV TLS istedi (kablosuz hata ayıklama); lütfen USB hata ayıklamayı kullanın";
             case "the TV rejected the app's key": return "TV uygulamanın anahtarını reddetti";
             case "the TV's ADB didn't respond": return "TV'nin ADB'si yanıt vermedi";
             case "unexpected reply from ADB": return "ADB'den beklenmeyen yanıt";
@@ -454,9 +454,9 @@ final class Turkish {
             case "”? It comes back in Settings.": return "” gizlensin mi? Ayarlar'dan geri getirebilirsiniz.";
             // Screensaver style and clock format
             case "Picks": return "Öneriler";
-            case "Clock and aurora": return "Saat ve aurora";
-            case "24-hour": return "24 saat";
-            case "12-hour": return "12 saat";
+            case "Clock and aurora": return "Saat ve Aurora";
+            case "24-hour": return "24 Saat";
+            case "12-hour": return "12 Saat";
             default:
                 if (english.startsWith("No. ") && english.endsWith(" in shows today")) {
                     return "Bugün dizilerde " + english.substring(4, english.length() - 15) + ". sırada";
