@@ -655,18 +655,20 @@ public class DetailActivity extends Activity {
         return null;
     }
 
-    /** YouTube for TV in its own task (started as part of ours, it closes as soon as the video opens). */
+    /** SmartTube when it's installed (it opens trailers without ads or sign-in nags), else the official YouTube
+     *  for TV, in its own task (started as part of ours, it closes as soon as the video opens). */
     private void playTrailer(String key) {
-        Intent youtube = new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + key))
-                .setPackage("com.google.android.youtube.tv")
+        Uri url = Uri.parse("https://www.youtube.com/watch?v=" + key);
+        String pkg = Providers.installed(this, "org.smarttube.stable") ? "org.smarttube.stable" : "com.google.android.youtube.tv";
+        Intent app = new Intent(Intent.ACTION_VIEW, url).setPackage(pkg)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         try {
-            startActivity(youtube);
+            startActivity(app);
         } catch (Exception e) {
             try {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://www.youtube.com/watch?v=" + key)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                startActivity(new Intent(Intent.ACTION_VIEW, url).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
             } catch (Exception ignored) {
-                Toast.makeText(this, Ui.tr("O YouTube não está instalado.", "YouTube isn't installed."), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, Ui.tr("Nenhum app para abrir o trailer.", "No app to open the trailer."), Toast.LENGTH_SHORT).show();
             }
         }
     }
