@@ -30,6 +30,8 @@
         <package android:name="com.google.android.tv" />
         <package android:name="com.mediatek.wwtv.tvcenter" />
         <package android:name="com.sony.dtv.tvx" />
+        <!-- Google TV's screensaver: the "Google Photos" choice is offered only when it is there and on. -->
+        <package android:name="com.google.android.apps.tv.dreamx" />
         <intent>
             <action android:name="android.intent.action.MAIN" />
             <category android:name="android.intent.category.LEANBACK_LAUNCHER" />

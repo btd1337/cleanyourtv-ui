@@ -83,14 +83,34 @@ final class Prefs {
 
     static final String GOOGLE_SCREENSAVER = "com.google.android.apps.tv.dreamx/.service.Backdrop";
 
-    /** Also points the system's screensaver at Google's or at ours; that needs WRITE_SECURE_SETTINGS (pm grant). */
+    /** Google TV's screensaver is installed and on: a debloat list may have turned dreamx off, or the TV has none. */
+    static boolean googleScreensaver() {
+        if (app == null) return false;
+        try {
+            app.getPackageManager().getServiceInfo(android.content.ComponentName.unflattenFromString(GOOGLE_SCREENSAVER), 0);
+            return true;
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Also points the system's screensaver at Google's, or back at ours when it was Google's; that needs
+     * WRITE_SECURE_SETTINGS (pm grant). Any other screensaver_components (none, or one set by hand) is left alone.
+     */
     static void setScreensaverStyle(String v) {
+        boolean google = "google".equals(v);
+        if (google && !googleScreensaver()) {
+            AppLog.w("screensaver not switched: Google's screensaver (dreamx) isn't installed or is off");
+            return;
+        }
         put("screensaver", v);
         if (app == null) return;
+        android.content.ContentResolver cr = app.getContentResolver();
+        if (!google && !GOOGLE_SCREENSAVER.equals(android.provider.Settings.Secure.getString(cr, "screensaver_components"))) return;
         String own = app.getPackageName() + "/." + (app.getResources().getBoolean(R.bool.dream_alone) ? "ScreensaverAlone" : "Screensaver");
         try {
-            android.provider.Settings.Secure.putString(app.getContentResolver(), "screensaver_components",
-                    "google".equals(v) ? GOOGLE_SCREENSAVER : own);
+            android.provider.Settings.Secure.putString(cr, "screensaver_components", google ? GOOGLE_SCREENSAVER : own);
         } catch (SecurityException e) {
             AppLog.w("screensaver not switched, no WRITE_SECURE_SETTINGS: " + e.getMessage());
         }

@@ -437,9 +437,11 @@ public class SettingsActivity extends Activity {
                 case KeyEvent.KEYCODE_DPAD_LEFT:
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                     if (down && screen == MAIN && focus == 0) {
-                        int at = java.util.Arrays.asList(STYLES).indexOf(Prefs.screensaverStyle());
+                        // "google" only where Google TV's screensaver is installed and on.
+                        String[] styles = Prefs.googleScreensaver() ? STYLES : java.util.Arrays.copyOf(STYLES, STYLES.length - 1);
+                        int at = java.util.Arrays.asList(styles).indexOf(Prefs.screensaverStyle());
                         int dir = e.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : -1;
-                        Prefs.setScreensaverStyle(STYLES[(at + dir + STYLES.length) % STYLES.length]);
+                        Prefs.setScreensaverStyle(styles[(at + dir + styles.length) % styles.length]);
                         invalidate();
                         spoken.focusMoved();
                     } else if (down && screen == SHELF_EDIT) {
