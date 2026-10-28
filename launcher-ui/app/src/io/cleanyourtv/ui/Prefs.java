@@ -72,12 +72,49 @@ final class Prefs {
 
     static void setTheme(String v) { put("theme", v); }
 
-    /** The screensaver: "photos" (the picks, as before) or "aurora" (the clock over the sky, without photos). */
+    /**
+     * The screensaver: "photos" (the picks, as before), "aurora" (the clock over the sky, without photos) or "google"
+     * (Google TV's own screensaver, which can show a Google Photos album).
+     */
     static String screensaverStyle() {
-        return "aurora".equals(sp().getString("screensaver", "photos")) ? "aurora" : "photos";
+        String v = sp().getString("screensaver", "photos");
+        return "aurora".equals(v) || "google".equals(v) ? v : "photos";
     }
 
-    static void setScreensaverStyle(String v) { put("screensaver", v); }
+    static final String GOOGLE_SCREENSAVER = "com.google.android.apps.tv.dreamx/.service.Backdrop";
+
+    /** Google TV's screensaver is installed and on: a debloat list may have turned dreamx off, or the TV has none. */
+    static boolean googleScreensaver() {
+        if (app == null) return false;
+        try {
+            app.getPackageManager().getServiceInfo(android.content.ComponentName.unflattenFromString(GOOGLE_SCREENSAVER), 0);
+            return true;
+        } catch (android.content.pm.PackageManager.NameNotFoundException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Also points the system's screensaver at Google's, or back at ours when it was Google's; that needs
+     * WRITE_SECURE_SETTINGS (pm grant). Any other screensaver_components (none, or one set by hand) is left alone.
+     */
+    static void setScreensaverStyle(String v) {
+        boolean google = "google".equals(v);
+        if (google && !googleScreensaver()) {
+            AppLog.w("screensaver not switched: Google's screensaver (dreamx) isn't installed or is off");
+            return;
+        }
+        put("screensaver", v);
+        if (app == null) return;
+        android.content.ContentResolver cr = app.getContentResolver();
+        if (!google && !GOOGLE_SCREENSAVER.equals(android.provider.Settings.Secure.getString(cr, "screensaver_components"))) return;
+        String own = app.getPackageName() + "/." + (app.getResources().getBoolean(R.bool.dream_alone) ? "ScreensaverAlone" : "Screensaver");
+        try {
+            android.provider.Settings.Secure.putString(cr, "screensaver_components", google ? GOOGLE_SCREENSAVER : own);
+        } catch (SecurityException e) {
+            AppLog.w("screensaver not switched, no WRITE_SECURE_SETTINGS: " + e.getMessage());
+        }
+    }
 
     /** "auto" (12-hour in English, 24-hour otherwise, as before), "24h" or "12h". */
     static String clockFormat() {

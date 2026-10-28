@@ -38,6 +38,8 @@ on (Settings → Device Preferences → About → press OK on **Build** seven ti
    ```
    The second command replaces any accessibility service already on: check
    `adb shell settings get secure enabled_accessibility_services` first and join them with `:`.
+   For "Google Photos" under Settings → Screensaver (Google TV's own screensaver, which must stay enabled), let the app
+   switch the screensaver: `adb shell pm grant io.cleanyourtv.ui android.permission.WRITE_SECURE_SETTINGS`.
 5. Switch Network debugging off again on the TV when you are done: port 5555 is plaintext.
 
 With a clone of this repository, `build-and-install.sh` does steps 2 to 4 with the same safeguards as CleanYourTV's
@@ -95,7 +97,7 @@ logged, never guessed. [`config.example.json`](config.example.json) has them all
 | `theme` | `auto`, `light`, `dark` | `auto` is dark from sunset to sunrise. |
 | `temperature` | `auto`, `C`, `F` | |
 | `clock` | `auto`, `24h`, `12h` | |
-| `screensaver` | `photos`, `aurora` | |
+| `screensaver` | `photos`, `aurora`, `google` | `google` is Google TV's own screensaver (a Google Photos album): it needs dreamx enabled and `adb shell pm grant io.cleanyourtv.ui android.permission.WRITE_SECURE_SETTINGS`, or only the choice is saved. |
 | `weather` | `true` / `false` | The weather widget. |
 | `show_crypto` | `true` / `false` | The quotes widget (Binance). |
 | `currency` | three letters (`USD`, `BRL`, `EUR`, `TRY`) | The quotes' currency. |

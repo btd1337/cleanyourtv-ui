@@ -437,9 +437,11 @@ public class SettingsActivity extends Activity {
                 case KeyEvent.KEYCODE_DPAD_LEFT:
                 case KeyEvent.KEYCODE_DPAD_RIGHT:
                     if (down && screen == MAIN && focus == 0) {
-                        int at = java.util.Arrays.asList(STYLES).indexOf(Prefs.screensaverStyle());
+                        // "google" only where Google TV's screensaver is installed and on.
+                        String[] styles = Prefs.googleScreensaver() ? STYLES : java.util.Arrays.copyOf(STYLES, STYLES.length - 1);
+                        int at = java.util.Arrays.asList(styles).indexOf(Prefs.screensaverStyle());
                         int dir = e.getKeyCode() == KeyEvent.KEYCODE_DPAD_RIGHT ? 1 : -1;
-                        Prefs.setScreensaverStyle(STYLES[(at + dir + STYLES.length) % STYLES.length]);
+                        Prefs.setScreensaverStyle(styles[(at + dir + styles.length) % styles.length]);
                         invalidate();
                         spoken.focusMoved();
                     } else if (down && screen == SHELF_EDIT) {
@@ -494,12 +496,13 @@ public class SettingsActivity extends Activity {
         // MARK: - Home Settings and Remote Buttons
 
         private static final String[] LANGUAGES = {"auto", "pt", "en", "es", "de", "ru", "fr", "tr", "he"}, UNITS = {"auto", "C", "F"}, THEMES = {"auto", "light", "dark"};
-        private static final String[] CLOCKS = {"auto", "24h", "12h"}, STYLES = {"photos", "aurora"};
+        private static final String[] CLOCKS = {"auto", "24h", "12h"}, STYLES = {"photos", "aurora", "google"};
         /** Home Settings: language, temperature, theme, clock, weather, city, quotes, then one row per coin. */
         private static final int CLOCK_ROW = 3, WEATHER_ROW = 4, CITY_ROW = 5, QUOTES_ROW = 6, COIN_ROWS = 7;
 
         private static String styleName(String style) {
-            return style.equals("aurora") ? Ui.tr("Relógio e aurora", "Clock and aurora") : Ui.tr("Destaques", "Picks");
+            return style.equals("aurora") ? Ui.tr("Relógio e aurora", "Clock and aurora")
+                    : style.equals("google") ? Ui.tr("Fotos do Google", "Google Photos") : Ui.tr("Destaques", "Picks");
         }
 
         private boolean dollar() {
@@ -927,6 +930,15 @@ public class SettingsActivity extends Activity {
             } else if (screen == HOME_SETTINGS) {
                 adjust(1);
                 invalidate();
+                return;
+            } else if (focus == 0 && Prefs.screensaverStyle().equals("google")) {
+                // Google's screensaver: OK opens its own settings, where the Google Photos album is picked.
+                try {
+                    getContext().startActivity(new android.content.Intent("dreamx.two.panel.SETTINGS")
+                            .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+                } catch (RuntimeException ex) {
+                    AppLog.w("Google screensaver settings: " + ex.getMessage());
+                }
                 return;
             } else if (focus == 0) {
                 pause();
