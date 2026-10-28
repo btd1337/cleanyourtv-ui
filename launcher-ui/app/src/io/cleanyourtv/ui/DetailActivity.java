@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
@@ -414,6 +415,14 @@ public class DetailActivity extends Activity {
     private View whereToWatch(JSONObject region) {
         TvUi.Flow line = new TvUi.Flow(this, Math.round(18 * k), Math.round(18 * k));
         line.setPadding(0, Math.round(14 * k), Math.round(96 * k), Math.round(14 * k));
+        // IPTV has no catalog TMDB can look up (it isn't a licensed service), so there's no per-title match to
+        // check: the tile just offers it, the same way every other chip offers its own app. IPTV Deck answers
+        // MEDIA_PLAY_FROM_SEARCH (checked with `dumpsys package com.mistykuu.iptvdeck`, same action Google
+        // Assistant voice search uses on Android TV), so the chip searches the title by name instead of just
+        // opening the app cold. First in the row: the one app that's always worth trying.
+        String kindLabel = title.kind.equals("movie") ? Ui.tr("Buscar filme", "Search movie") : Ui.tr("Buscar série", "Search show");
+        View iptv = appChip("com.mistykuu.iptvdeck", "IPTV Deck", kindLabel);
+        if (iptv != null) line.addView(iptv);
         String[][] types = {{"flatrate", Ui.tr("Assinatura", "Subscription")}, {"free", Ui.tr("Grátis", "Free")},
                 {"ads", Ui.tr("Grátis com anúncios", "Free with ads")}, {"rent", Ui.tr("Aluguel", "Rent")}, {"buy", Ui.tr("Compra", "Buy")}};
         Set<String> added = new HashSet<>();
@@ -432,6 +441,57 @@ public class DetailActivity extends Activity {
             return none;
         }
         return line;
+    }
+
+    /** A chip in the same shape as a TMDB provider's, for an app TMDB doesn't know about: its own launcher icon
+     *  instead of a TMDB logo, no subscription/free/rent label since there's none to show. Null if not installed. */
+    private View appChip(String pkg, String label, String sub) {
+        android.graphics.drawable.Drawable icon;
+        try {
+            icon = getPackageManager().getApplicationIcon(pkg);
+        } catch (PackageManager.NameNotFoundException e) {
+            return null;
+        }
+        LinearLayout chip = new LinearLayout(this);
+        chip.setOrientation(LinearLayout.HORIZONTAL);
+        chip.setGravity(Gravity.CENTER_VERTICAL);
+        chip.setPadding(Math.round(16 * k), Math.round(16 * k), Math.round(30 * k), Math.round(16 * k));
+        ImageView img = new ImageView(this);
+        img.setClipToOutline(true);
+        img.setBackground(TvUi.round(0x00000000, 12 * k));
+        img.setImageDrawable(icon);
+        int size = Math.round(64 * k);
+        chip.addView(img, new LinearLayout.LayoutParams(size, size));
+        LinearLayout texts = new LinearLayout(this);
+        texts.setOrientation(LinearLayout.VERTICAL);
+        texts.setPadding(Math.round(18 * k), 0, 0, 0);
+        TextView n = TvUi.text(this, k, 25, Ui.medium, TvUi.INK);
+        n.setText(label);
+        TextView s = TvUi.text(this, k, 21, Ui.regular, TvUi.DIM);
+        s.setText(sub);
+        s.setPadding(0, Math.round(6 * k), 0, 0);
+        texts.addView(n);
+        texts.addView(s);
+        chip.addView(texts);
+        TvUi.softFocus(chip, k, 18 * k);
+        chip.setOnClickListener(v -> searchOrOpen(pkg));
+        return chip;
+    }
+
+    /** MEDIA_PLAY_FROM_SEARCH, the action Google Assistant voice search fires on Android TV: apps that answer
+     *  it search (and often go straight to playing) the query, instead of opening on their own home screen.
+     *  Falls back to a plain open when the app doesn't answer it or the search misfires. */
+    private void searchOrOpen(String pkg) {
+        if (title == null) { watch(pkg); return; }
+        Intent i = new Intent("android.media.action.MEDIA_PLAY_FROM_SEARCH");
+        i.setPackage(pkg);
+        i.putExtra(android.app.SearchManager.QUERY, title.name);
+        if (i.resolveActivity(getPackageManager()) == null) { watch(pkg); return; }
+        try {
+            startActivity(i);
+        } catch (Exception e) {
+            watch(pkg);
+        }
     }
 
     private View chip(int pid, String name, String logo, String type) {
